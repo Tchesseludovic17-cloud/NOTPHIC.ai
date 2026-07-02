@@ -416,6 +416,25 @@ export const SubmitFeedbackResponse = zod.object({
 
 
 /**
+ * @summary Get Company Twin — business memory summary
+ */
+export const GetCompanyTwinResponse = zod.object({
+  "total_clients": zod.number(),
+  "clients_actifs": zod.number(),
+  "clients_en_alerte": zod.number(),
+  "frequence_moyenne_jours": zod.number().nullish(),
+  "taux_relance_reussie": zod.number().nullable(),
+  "total_relances": zod.number(),
+  "relances_reussies": zod.number(),
+  "historique_mensuel": zod.array(zod.object({
+  "mois": zod.string(),
+  "alertes_generees": zod.number(),
+  "clients_sauves": zod.number()
+}))
+})
+
+
+/**
  * @summary Get current user's affiliation stats and filleuls
  */
 export const GetMyAffiliationsResponse = zod.object({

@@ -10,6 +10,7 @@ import Alertes from "@/pages/alerts";
 import Parametres from "@/pages/settings";
 import SitePublic from "@/pages/site-public";
 import Affiliations from "@/pages/affiliations";
+import CompanyTwin from "@/pages/company-twin";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/alertes" component={Alertes} />
       <Route path="/parametres" component={Parametres} />
       <Route path="/affiliations" component={Affiliations} />
+      <Route path="/company-twin" component={CompanyTwin} />
       <Route path="/site/:slug" component={SitePublic} />
       <Route component={NotFound} />
     </Switch>

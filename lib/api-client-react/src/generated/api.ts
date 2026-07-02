@@ -25,6 +25,7 @@ import type {
   Client,
   ClientInput,
   ClientUpdate,
+  CompanyTwin,
   ContactInput,
   ContactResult,
   DetectionResult,
@@ -1386,6 +1387,83 @@ export const useSubmitFeedback = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSubmitFeedbackMutationOptions(options));
     }
+
+export const getGetCompanyTwinUrl = () => {
+
+
+
+
+  return `/api/company-twin`
+}
+
+/**
+ * @summary Get Company Twin — business memory summary
+ */
+export const getCompanyTwin = async ( options?: RequestInit): Promise<CompanyTwin> => {
+
+  return customFetch<CompanyTwin>(getGetCompanyTwinUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCompanyTwinQueryKey = () => {
+    return [
+    `/api/company-twin`
+    ] as const;
+    }
+
+
+export const getGetCompanyTwinQueryOptions = <TData = Awaited<ReturnType<typeof getCompanyTwin>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompanyTwin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCompanyTwinQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCompanyTwin>>> = ({ signal }) => getCompanyTwin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCompanyTwin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCompanyTwinQueryResult = NonNullable<Awaited<ReturnType<typeof getCompanyTwin>>>
+export type GetCompanyTwinQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get Company Twin — business memory summary
+ */
+
+export function useGetCompanyTwin<TData = Awaited<ReturnType<typeof getCompanyTwin>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCompanyTwin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCompanyTwinQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMyAffiliationsUrl = () => {
 

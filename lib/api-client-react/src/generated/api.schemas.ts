@@ -300,6 +300,25 @@ export interface AffiliationStats {
   filleuls: FilleulItem[];
 }
 
+export interface MoisHistorique {
+  mois: string;
+  alertes_generees: number;
+  clients_sauves: number;
+}
+
+export interface CompanyTwin {
+  total_clients: number;
+  clients_actifs: number;
+  clients_en_alerte: number;
+  /** @nullable */
+  frequence_moyenne_jours?: number | null;
+  /** @nullable */
+  taux_relance_reussie: number | null;
+  total_relances: number;
+  relances_reussies: number;
+  historique_mensuel: MoisHistorique[];
+}
+
 export type ListAlertesParams = {
 statut?: ListAlertesStatut;
 };

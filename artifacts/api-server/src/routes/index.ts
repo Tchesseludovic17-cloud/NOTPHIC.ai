@@ -8,6 +8,7 @@ import statsRouter from "./stats";
 import siteRouter from "./site";
 import feedbackRouter from "./feedback";
 import affiliationsRouter from "./affiliations";
+import companyTwinRouter from "./company-twin";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(statsRouter);
 router.use(siteRouter);
 router.use(feedbackRouter);
 router.use(affiliationsRouter);
+router.use(companyTwinRouter);
 
 export default router;

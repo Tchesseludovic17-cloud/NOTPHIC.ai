@@ -16,6 +16,7 @@ tags:
   - name: site
   - name: feedback
   - name: affiliations
+  - name: company-twin
 
 paths:
   /healthz:
@@ -358,6 +359,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FeedbackResponse"
+
+  /company-twin:
+    get:
+      operationId: getCompanyTwin
+      tags: [company-twin]
+      summary: Get Company Twin — business memory summary
+      responses:
+        "200":
+          description: Company Twin data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyTwin"
 
   /affiliations/me:
     get:
@@ -721,3 +735,37 @@ components:
         created_at:
           type: string
       required: [id, nom_activite, statut_actif, taux_commission_actuel, created_at]
+
+    CompanyTwin:
+      type: object
+      properties:
+        total_clients:
+          type: integer
+        clients_actifs:
+          type: integer
+        clients_en_alerte:
+          type: integer
+        frequence_moyenne_jours:
+          type: ["number", "null"]
+        taux_relance_reussie:
+          type: ["number", "null"]
+        total_relances:
+          type: integer
+        relances_reussies:
+          type: integer
+        historique_mensuel:
+          type: array
+          items:
+            $ref: "#/components/schemas/MoisHistorique"
+      required: [total_clients, clients_actifs, clients_en_alerte, taux_relance_reussie, total_relances, relances_reussies, historique_mensuel]
+
+    MoisHistorique:
+      type: object
+      properties:
+        mois:
+          type: string
+        alertes_generees:
+          type: integer
+        clients_sauves:
+          type: integer
+      required: [mois, alertes_generees, clients_sauves]
