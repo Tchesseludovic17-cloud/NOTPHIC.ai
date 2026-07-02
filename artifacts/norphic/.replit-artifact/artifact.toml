@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Norphic"
+version = "1.0.0"
+id = "artifacts/norphic"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24401
+
+[services.development]
+run = "pnpm --filter @workspace/norphic run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/norphic", "run", "build" ]
+publicDir = "artifacts/norphic/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24401"
+BASE_PATH = "/"

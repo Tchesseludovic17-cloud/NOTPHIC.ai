@@ -1,22 +1,31 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Norphic
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profile & onboarding
+  - name: clients
+    description: CRM client management
+  - name: alertes
+    description: Alert management
+  - name: detection
+    description: Detection engine
+  - name: stats
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,241 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: No user found (onboarding not done)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/setup:
+    post:
+      operationId: setupUser
+      tags: [users]
+      summary: Create user profile (onboarding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List all clients
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Created client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{id}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      summary: Get a client by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /clients/{id}/visit:
+    post:
+      operationId: markClientVisit
+      tags: [clients]
+      summary: Mark that a client visited today
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /alertes:
+    get:
+      operationId: listAlertes
+      tags: [alertes]
+      summary: List all alerts
+      parameters:
+        - name: statut
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [non_lu, traite, tous]
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alerte"
+
+  /alertes/{id}/traiter:
+    patch:
+      operationId: traiterAlerte
+      tags: [alertes]
+      summary: Mark alert as treated
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alerte"
+
+  /detection/run:
+    post:
+      operationId: runDetection
+      tags: [detection]
+      summary: Run the detection engine manually
+      responses:
+        "200":
+          description: Detection result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetectionResult"
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [stats]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +278,240 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: ["string", "null"]
+        nom_activite:
+          type: string
+        categorie_activite:
+          type: string
+          enum: [rendez_vous_regulier, commerce_fidele, service_independant]
+        description_activite:
+          type: ["string", "null"]
+        plan:
+          type: string
+        created_at:
+          type: string
+      required:
+        - id
+        - nom_activite
+        - categorie_activite
+        - plan
+        - created_at
+
+    UserInput:
+      type: object
+      properties:
+        nom_activite:
+          type: string
+        categorie_activite:
+          type: string
+          enum: [rendez_vous_regulier, commerce_fidele, service_independant]
+        description_activite:
+          type: string
+        email:
+          type: string
+      required:
+        - nom_activite
+        - categorie_activite
+
+    UserUpdate:
+      type: object
+      properties:
+        nom_activite:
+          type: string
+        categorie_activite:
+          type: string
+          enum: [rendez_vous_regulier, commerce_fidele, service_independant]
+        description_activite:
+          type: string
+        email:
+          type: string
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        nom:
+          type: string
+        telephone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        date_dernier_contact:
+          type: ["string", "null"]
+        derniere_visite:
+          type: ["string", "null"]
+        frequence_moyenne_jours:
+          type: ["integer", "null"]
+        jour_habituel:
+          type: ["string", "null"]
+        dernier_rdv_statut:
+          type: ["string", "null"]
+          enum: ["confirme", "annule", "absent", null]
+        date_dernier_rdv:
+          type: ["string", "null"]
+        date_prochain_rdv:
+          type: ["string", "null"]
+        abonnement_actif:
+          type: ["boolean", "null"]
+        abonnement_date_renouvellement:
+          type: ["string", "null"]
+        nb_alertes_actives:
+          type: integer
+        created_at:
+          type: string
+      required:
+        - id
+        - user_id
+        - nom
+        - nb_alertes_actives
+        - created_at
+
+    ClientInput:
+      type: object
+      properties:
+        nom:
+          type: string
+        telephone:
+          type: string
+        email:
+          type: string
+        derniere_visite:
+          type: string
+        frequence_moyenne_jours:
+          type: integer
+        dernier_rdv_statut:
+          type: string
+          enum: [confirme, annule, absent]
+        date_dernier_rdv:
+          type: string
+        date_prochain_rdv:
+          type: string
+        abonnement_actif:
+          type: boolean
+        abonnement_date_renouvellement:
+          type: string
+      required:
+        - nom
+
+    ClientUpdate:
+      type: object
+      properties:
+        nom:
+          type: string
+        telephone:
+          type: string
+        email:
+          type: string
+        derniere_visite:
+          type: string
+        frequence_moyenne_jours:
+          type: integer
+        dernier_rdv_statut:
+          type: string
+          enum: [confirme, annule, absent]
+        date_dernier_rdv:
+          type: string
+        date_prochain_rdv:
+          type: string
+        abonnement_actif:
+          type: boolean
+        abonnement_date_renouvellement:
+          type: string
+
+    Alerte:
+      type: object
+      properties:
+        id:
+          type: integer
+        client_id:
+          type: integer
+        user_id:
+          type: integer
+        type_signal:
+          type: string
+          enum: [silence, rupture_frequence, annulation_sans_reprise, non_renouvellement]
+        message:
+          type: string
+        message_relance_suggere:
+          type: ["string", "null"]
+        gravite:
+          type: string
+          enum: [faible, moyenne, haute]
+        statut:
+          type: string
+          enum: [non_lu, traite]
+        client_nom:
+          type: string
+        created_at:
+          type: string
+      required:
+        - id
+        - client_id
+        - user_id
+        - type_signal
+        - message
+        - gravite
+        - statut
+        - client_nom
+        - created_at
+
+    DetectionResult:
+      type: object
+      properties:
+        alertes_creees:
+          type: integer
+        message:
+          type: string
+      required:
+        - alertes_creees
+        - message
+
+    Stats:
+      type: object
+      properties:
+        total_clients:
+          type: integer
+        alertes_actives:
+          type: integer
+        clients_a_risque:
+          type: integer
+        clients_ok:
+          type: integer
+        alertes_par_type:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlerteTypeCount"
+      required:
+        - total_clients
+        - alertes_actives
+        - clients_a_risque
+        - clients_ok
+        - alertes_par_type
+
+    AlerteTypeCount:
+      type: object
+      properties:
+        type_signal:
+          type: string
+        count:
+          type: integer
+      required:
+        - type_signal
+        - count

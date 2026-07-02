@@ -1,0 +1,140 @@
+import { Layout } from "@/components/layout";
+import { useGetMe, useUpdateMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
+const formSchema = z.object({
+  nom_activite: z.string().min(2, "Le nom est requis"),
+  description_activite: z.string().optional(),
+});
+
+export default function Settings() {
+  const { data: user, isLoading } = useGetMe();
+  const updateMe = useUpdateMe();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nom_activite: "",
+      description_activite: "",
+    }
+  });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        nom_activite: user.nom_activite,
+        description_activite: user.description_activite || "",
+      });
+    }
+  }, [user, form]);
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    updateMe.mutate({ data: values }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        toast({ title: "Profil mis à jour" });
+      }
+    });
+  };
+
+  return (
+    <Layout>
+      <div className="mb-8">
+        <h1 className="text-3xl font-serif font-bold text-foreground">Paramètres</h1>
+        <p className="text-muted-foreground mt-1">Configurez votre espace de travail.</p>
+      </div>
+
+      <div className="max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Profil de l'activité</CardTitle>
+            <CardDescription>
+              Ces informations permettent à Norphic de mieux comprendre votre métier.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="py-4 text-muted-foreground">Chargement...</div>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Email de connexion</Label>
+                      <div className="px-3 py-2 bg-muted rounded-md text-sm">{user?.email}</div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Catégorie</Label>
+                      <div className="px-3 py-2 bg-muted rounded-md text-sm capitalize">
+                        {user?.categorie_activite?.replace(/_/g, ' ')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <FormField
+                      control={form.control}
+                      name="nom_activite"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormLabel>Nom de l'activité</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description_activite"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} className="resize-none" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Button type="submit" disabled={updateMe.isPending}>
+                    {updateMe.isPending ? "Enregistrement..." : "Enregistrer les modifications"}
+                  </Button>
+                </form>
+              </Form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
+  );
+}
+
+// Small helper since we don't import Label globally in this snippet
+function Label({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <label className={`text-sm font-medium leading-none ${className}`}>{children}</label>;
+}

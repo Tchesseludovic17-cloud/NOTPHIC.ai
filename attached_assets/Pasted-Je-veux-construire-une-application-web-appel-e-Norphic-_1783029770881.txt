@@ -1,0 +1,28 @@
+Je veux construire une application web appelée Norphic — un SaaS qui aide les indépendants (coachs, consultants, petits commerces) à repérer automatiquement quand un client s'éloigne, avant de le perdre définitivement.
+
+STACK SOUHAITÉE : Next.js pour le frontend/backend, base de données intégrée (PostgreSQL si possible).
+
+FONCTIONNALITÉS DE LA V1 :
+
+1. ONBOARDING — Un formulaire simple qui demande à l'utilisateur :
+   - Le nom de son activité
+   - Une description de ce qu'il fait
+   - Sa catégorie d'activité, à choisir parmi 3 options : "rendez_vous_regulier" (coachs, praticiens), "commerce_fidele" (boutiques, restaurants à habitués), "service_independant" (consultants, freelances)
+
+2. BASE DE DONNÉES — Crée ces tables :
+   - users (id, email, nom_activite, categorie_activite, description_activite, plan par défaut "gratuit")
+   - clients (id, user_id, nom, telephone, email, date_dernier_contact, derniere_visite, frequence_moyenne_jours, jour_habituel, dernier_rdv_statut, date_dernier_rdv, date_prochain_rdv, abonnement_actif, abonnement_date_renouvellement)
+   - historique_visites (id, client_id, date_visite)
+   - alertes (id, client_id, user_id, type_signal, message, message_relance_suggere, gravite, statut par défaut "non_lu")
+
+3. INTERFACE CRM SIMPLE — Une page où l'utilisateur peut voir la liste de ses clients, en ajouter un nouveau manuellement (nom, téléphone, date de dernière visite), et marquer qu'un client est venu aujourd'hui.
+
+4. MOTEUR DE DÉTECTION — Une fonction qui tourne quotidiennement et vérifie, pour chaque client, ces 4 règles :
+   - SILENCE : si aucun contact depuis 5 jours (ou 2 jours si catégorie commerce_fidele), créer une alerte
+   - RUPTURE DE FRÉQUENCE : si le client n'est pas revenu depuis plus de 1.5 fois sa fréquence moyenne habituelle, créer une alerte
+   - ANNULATION SANS REPRISE : si le dernier rendez-vous est annulé et qu'aucun nouveau rendez-vous n'a été repris depuis 7 jours, créer une alerte
+   - NON-RENOUVELLEMENT : si un abonnement n'a pas été renouvelé le jour prévu, créer une alerte immédiatement
+
+5. TABLEAU D'ALERTES — Une page qui affiche toutes les alertes actives, avec le message factuel (exemple : "Jean venait chaque 14 jours, mais ça fait 23 jours qu'il n'est pas revenu. Je vous suggère de lui envoyer un message.") et un bouton pour marquer l'alerte comme traitée.
+
+Commence par la structure de base de données et l'onboarding, puis le CRM, puis le moteur de détection, puis le tableau d'alertes. Explique-moi chaque étape simplement au fur et à mesure, je ne suis pas développeuse.
