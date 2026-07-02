@@ -1,0 +1,43 @@
+Je veux construire une application web appelée Norphic — un SaaS qui aide les indépendants (coachs, consultants, petits commerces) à repérer automatiquement quand un client s'éloigne, avant de le perdre définitivement. L'application a deux parties : un site public généré pour chaque utilisateur, et un espace privé (CRM + alertes) pour gérer son activité.
+
+STACK SOUHAITÉE : Next.js pour le frontend/backend, base de données intégrée (PostgreSQL si possible).
+
+FONCTIONNALITÉS DE LA V1 :
+
+1. ONBOARDING — Un formulaire qui demande à l'utilisateur :
+   - Le nom de son activité
+   - Une description libre et détaillée de ce qu'il fait (que fait votre activité, quels services ou produits proposez-vous)
+   - Qui est son client idéal (description libre)
+   - Sa catégorie d'activité, à choisir parmi 3 options : "rendez_vous_regulier" (coachs, praticiens), "commerce_fidele" (boutiques, restaurants à habitués), "service_independant" (consultants, freelances)
+   - Une réduction ou avantage qu'il souhaite offrir pour inciter les clients à réserver en ligne plutôt que sur place (exemple : "5%")
+
+2. GÉNÉRATION AUTOMATIQUE DU SITE PUBLIC — À partir des réponses de l'onboarding (nom, description de l'activité, client idéal), génère automatiquement une page de site web publique et professionnelle pour cet utilisateur, avec :
+   - Un titre accrocheur basé sur son activité
+   - Une présentation claire de ce qu'il propose, reformulée de façon professionnelle à partir de sa description brute
+   - Une section "à qui ça s'adresse" basée sur le client idéal décrit
+   - Un bouton ou formulaire de contact/réservation simple (nom, téléphone, email, message)
+   - Une mention de la réduction offerte pour réservation en ligne, si renseignée
+   - Un design simple, propre et moderne, sans template générique quelconque — pas de 3D, pas d'animation complexe, juste une mise en page soignée et professionnelle
+   Chaque utilisateur doit avoir sa propre page publique accessible par une URL unique (exemple : norphic.com/nom-de-l-activite)
+
+3. BASE DE DONNÉES — Crée ces tables :
+   - users (id, email, nom_activite, categorie_activite, description_activite, client_ideal, reduction_offerte, plan par défaut "gratuit")
+   - clients (id, user_id, nom, telephone, email, date_dernier_contact, derniere_visite, frequence_moyenne_jours, jour_habituel, dernier_rdv_statut, date_dernier_rdv, date_prochain_rdv, abonnement_actif, abonnement_date_renouvellement, derniere_visite_via)
+   - historique_visites (id, client_id, date_visite, via)
+   - alertes (id, client_id, user_id, type_signal, message, message_relance_suggere, gravite, statut par défaut "non_lu")
+
+4. RÉCEPTION DES RÉSERVATIONS DEPUIS LE SITE PUBLIC — Quand quelqu'un remplit le formulaire de contact/réservation sur le site public, ça doit automatiquement créer ou mettre à jour un client dans la base de données de l'utilisateur correspondant, avec la visite marquée "via site_en_ligne".
+
+5. INTERFACE CRM PRIVÉE — Une page où l'utilisateur connecté peut voir la liste de ses clients, en ajouter un manuellement pour les visites sur place (nom, téléphone, date de dernière visite, marqué "via manuel"), et marquer qu'un client est venu aujourd'hui.
+
+6. MOTEUR DE DÉTECTION — Une fonction qui tourne quotidiennement et vérifie, pour chaque client, ces 4 règles :
+   - SILENCE : si aucun contact depuis 5 jours (ou 2 jours si catégorie commerce_fidele), créer une alerte
+   - RUPTURE DE FRÉQUENCE : si le client n'est pas revenu depuis plus de 1.5 fois sa fréquence moyenne habituelle, créer une alerte
+   - ANNULATION SANS REPRISE : si le dernier rendez-vous est annulé et qu'aucun nouveau rendez-vous n'a été repris depuis 7 jours, créer une alerte
+   - NON-RENOUVELLEMENT : si un abonnement n'a pas été renouvelé le jour prévu, créer une alerte immédiatement
+
+7. TABLEAU D'ALERTES — Une page qui affiche toutes les alertes actives à l'utilisateur connecté, avec le message factuel (exemple : "Jean venait chaque 14 jours, mais ça fait 23 jours qu'il n'est pas revenu. Je vous suggère de lui envoyer un message.") et un bouton pour marquer l'alerte comme traitée.
+
+ORDRE DE CONSTRUCTION SOUHAITÉ : d'abord la base de données, puis l'onboarding, puis la génération du site public, puis la réception des réservations, puis le CRM privé, puis le moteur de détection, puis le tableau d'alertes.
+
+Explique-moi chaque étape simplement au fur et à mesure, je ne suis pas développeuse.
