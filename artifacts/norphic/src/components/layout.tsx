@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Bell, Settings, LogOut, Gift, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, Bell, Settings, LogOut, Gift, BookOpen, Globe } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -14,6 +14,8 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: "Affiliations", href: "/affiliations", icon: Gift },
     { name: "Mémoire", href: "/company-twin", icon: BookOpen },
   ];
+
+  const siteSlug = user?.slug;
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -43,6 +45,14 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="p-4 border-t border-border space-y-1">
+          {siteSlug && (
+            <a href={`/site/${siteSlug}`} target="_blank" rel="noopener noreferrer">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+                <Globe className="w-4 h-4" />
+                Mon site public
+              </div>
+            </a>
+          )}
           <Link href="/parametres">
             <div className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
               location === "/parametres" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"

@@ -1,14 +1,15 @@
-import { useGetStats, useListAlertes, getGetStatsQueryKey, getListAlertesQueryKey, useRunDetection } from "@workspace/api-client-react";
+import { useGetStats, useListAlertes, getGetStatsQueryKey, getListAlertesQueryKey, useRunDetection, useGetMe } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, AlertTriangle, ShieldCheck, Activity, BellRing, ArrowRight } from "lucide-react";
+import { Users, AlertTriangle, ShieldCheck, Activity, BellRing, ArrowRight, Globe, Copy, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetStats();
+  const { data: user } = useGetMe();
   const { data: alertes, isLoading: alertesLoading } = useListAlertes(
     { statut: "non_lu" },
     { query: { queryKey: getListAlertesQueryKey({ statut: "non_lu" }) } }
@@ -17,6 +18,14 @@ export default function Dashboard() {
   const runDetection = useRunDetection();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const siteUrl = user?.slug ? `${window.location.origin}/site/${user.slug}` : null;
+
+  const copySiteUrl = () => {
+    if (!siteUrl) return;
+    navigator.clipboard.writeText(siteUrl);
+    toast({ title: "Lien copié !", description: "L'URL de votre site a été copiée." });
+  };
 
   const handleRunDetection = () => {
     runDetection.mutate(undefined, {
@@ -96,6 +105,31 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Site public card */}
+      {user?.slug && (
+        <div className="mb-8 p-5 rounded-2xl border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-xl text-primary shrink-0">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Votre site public</p>
+              <p className="font-semibold text-foreground truncate max-w-xs">{siteUrl}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="outline" size="sm" className="gap-2" onClick={copySiteUrl}>
+              <Copy className="w-4 h-4" /> Copier
+            </Button>
+            <a href={`/site/${user.slug}`} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" className="gap-2">
+                <ExternalLink className="w-4 h-4" /> Voir le site
+              </Button>
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
