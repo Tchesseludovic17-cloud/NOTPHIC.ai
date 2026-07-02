@@ -19,6 +19,12 @@ export interface Alerte {
   message_relance_suggere?: string | null;
   gravite: AlerteGravite;
   statut: AlerteStatut;
+  /** @nullable */
+  suivi_demande?: boolean | null;
+  /** @nullable */
+  suivi_repondu?: boolean | null;
   client_nom: string;
   created_at: string;
+  /** @nullable */
+  traite_at?: string | null;
 }

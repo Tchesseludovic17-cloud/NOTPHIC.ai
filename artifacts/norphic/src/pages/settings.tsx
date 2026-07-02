@@ -14,14 +14,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { Link } from "wouter";
+import { ExternalLink } from "lucide-react";
 
 const formSchema = z.object({
   nom_activite: z.string().min(2, "Le nom est requis"),
   description_activite: z.string().optional(),
+  client_ideal: z.string().optional(),
+  reduction_offerte: z.string().optional(),
 });
 
 export default function Settings() {
@@ -35,6 +40,8 @@ export default function Settings() {
     defaultValues: {
       nom_activite: "",
       description_activite: "",
+      client_ideal: "",
+      reduction_offerte: "",
     }
   });
 
@@ -43,6 +50,8 @@ export default function Settings() {
       form.reset({
         nom_activite: user.nom_activite,
         description_activite: user.description_activite || "",
+        client_ideal: user.client_ideal || "",
+        reduction_offerte: user.reduction_offerte || "",
       });
     }
   }, [user, form]);
@@ -58,9 +67,19 @@ export default function Settings() {
 
   return (
     <Layout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-serif font-bold text-foreground">Paramètres</h1>
-        <p className="text-muted-foreground mt-1">Configurez votre espace de travail.</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-foreground">Paramètres</h1>
+          <p className="text-muted-foreground mt-1">Configurez votre espace de travail.</p>
+        </div>
+        {user?.slug && (
+          <Link href={`/site/${user.slug}`}>
+            <Button variant="outline" className="gap-2">
+              <ExternalLink className="w-4 h-4" />
+              Voir mon site public
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="max-w-2xl">
@@ -68,7 +87,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle>Profil de l'activité</CardTitle>
             <CardDescription>
-              Ces informations permettent à Norphic de mieux comprendre votre métier.
+              Ces informations permettent à Norphic de mieux comprendre votre métier et s'affichent sur votre site public.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -91,12 +110,12 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t space-y-4">
                     <FormField
                       control={form.control}
                       name="nom_activite"
                       render={({ field }) => (
-                        <FormItem className="mb-4">
+                        <FormItem>
                           <FormLabel>Nom de l'activité</FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -111,10 +130,39 @@ export default function Settings() {
                       name="description_activite"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Description (Ce que je propose)</FormLabel>
                           <FormControl>
-                            <Textarea {...field} className="resize-none" />
+                            <Textarea {...field} className="resize-none min-h-[100px]" />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="client_ideal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client idéal (À qui je m'adresse)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} className="resize-none min-h-[80px]" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="reduction_offerte"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Réduction offerte</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Ex: 10% sur la première séance" />
+                          </FormControl>
+                          <FormDescription>S'affiche comme bannière sur votre site public.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

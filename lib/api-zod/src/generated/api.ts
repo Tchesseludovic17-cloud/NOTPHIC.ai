@@ -23,9 +23,13 @@ export const GetMeResponse = zod.object({
   "id": zod.number(),
   "email": zod.string().nullish(),
   "nom_activite": zod.string(),
+  "slug": zod.string(),
   "categorie_activite": zod.enum(['rendez_vous_regulier', 'commerce_fidele', 'service_independant']),
   "description_activite": zod.string().nullish(),
-  "plan": zod.string(),
+  "client_ideal": zod.string().nullish(),
+  "reduction_offerte": zod.string().nullish(),
+  "plan": zod.enum(['gratuit', 'essentiel', 'pro']),
+  "code_parrainage": zod.string().nullish(),
   "created_at": zod.string()
 })
 
@@ -37,6 +41,8 @@ export const UpdateMeBody = zod.object({
   "nom_activite": zod.string().optional(),
   "categorie_activite": zod.enum(['rendez_vous_regulier', 'commerce_fidele', 'service_independant']).optional(),
   "description_activite": zod.string().optional(),
+  "client_ideal": zod.string().optional(),
+  "reduction_offerte": zod.string().optional(),
   "email": zod.string().optional()
 })
 
@@ -44,9 +50,13 @@ export const UpdateMeResponse = zod.object({
   "id": zod.number(),
   "email": zod.string().nullish(),
   "nom_activite": zod.string(),
+  "slug": zod.string(),
   "categorie_activite": zod.enum(['rendez_vous_regulier', 'commerce_fidele', 'service_independant']),
   "description_activite": zod.string().nullish(),
-  "plan": zod.string(),
+  "client_ideal": zod.string().nullish(),
+  "reduction_offerte": zod.string().nullish(),
+  "plan": zod.enum(['gratuit', 'essentiel', 'pro']),
+  "code_parrainage": zod.string().nullish(),
   "created_at": zod.string()
 })
 
@@ -58,16 +68,23 @@ export const SetupUserBody = zod.object({
   "nom_activite": zod.string(),
   "categorie_activite": zod.enum(['rendez_vous_regulier', 'commerce_fidele', 'service_independant']),
   "description_activite": zod.string().optional(),
-  "email": zod.string().optional()
+  "client_ideal": zod.string().optional(),
+  "reduction_offerte": zod.string().optional(),
+  "email": zod.string().optional(),
+  "code_parrainage_parrain": zod.string().optional()
 })
 
 export const SetupUserResponse = zod.object({
   "id": zod.number(),
   "email": zod.string().nullish(),
   "nom_activite": zod.string(),
+  "slug": zod.string(),
   "categorie_activite": zod.enum(['rendez_vous_regulier', 'commerce_fidele', 'service_independant']),
   "description_activite": zod.string().nullish(),
-  "plan": zod.string(),
+  "client_ideal": zod.string().nullish(),
+  "reduction_offerte": zod.string().nullish(),
+  "plan": zod.enum(['gratuit', 'essentiel', 'pro']),
+  "code_parrainage": zod.string().nullish(),
   "created_at": zod.string()
 })
 
@@ -83,9 +100,10 @@ export const ListClientsResponseItem = zod.object({
   "email": zod.string().nullish(),
   "date_dernier_contact": zod.string().nullish(),
   "derniere_visite": zod.string().nullish(),
+  "derniere_visite_via": zod.string().nullish(),
   "frequence_moyenne_jours": zod.number().nullish(),
   "jour_habituel": zod.string().nullish(),
-  "dernier_rdv_statut": zod.union([zod.literal('confirme'),zod.literal('annule'),zod.literal('absent'),zod.literal(null)]).nullish(),
+  "dernier_rdv_statut": zod.string().nullish(),
   "date_dernier_rdv": zod.string().nullish(),
   "date_prochain_rdv": zod.string().nullish(),
   "abonnement_actif": zod.boolean().nullish(),
@@ -104,6 +122,7 @@ export const CreateClientBody = zod.object({
   "telephone": zod.string().optional(),
   "email": zod.string().optional(),
   "derniere_visite": zod.string().optional(),
+  "derniere_visite_via": zod.string().optional(),
   "frequence_moyenne_jours": zod.number().optional(),
   "dernier_rdv_statut": zod.enum(['confirme', 'annule', 'absent']).optional(),
   "date_dernier_rdv": zod.string().optional(),
@@ -120,9 +139,10 @@ export const CreateClientResponse = zod.object({
   "email": zod.string().nullish(),
   "date_dernier_contact": zod.string().nullish(),
   "derniere_visite": zod.string().nullish(),
+  "derniere_visite_via": zod.string().nullish(),
   "frequence_moyenne_jours": zod.number().nullish(),
   "jour_habituel": zod.string().nullish(),
-  "dernier_rdv_statut": zod.union([zod.literal('confirme'),zod.literal('annule'),zod.literal('absent'),zod.literal(null)]).nullish(),
+  "dernier_rdv_statut": zod.string().nullish(),
   "date_dernier_rdv": zod.string().nullish(),
   "date_prochain_rdv": zod.string().nullish(),
   "abonnement_actif": zod.boolean().nullish(),
@@ -147,9 +167,10 @@ export const GetClientResponse = zod.object({
   "email": zod.string().nullish(),
   "date_dernier_contact": zod.string().nullish(),
   "derniere_visite": zod.string().nullish(),
+  "derniere_visite_via": zod.string().nullish(),
   "frequence_moyenne_jours": zod.number().nullish(),
   "jour_habituel": zod.string().nullish(),
-  "dernier_rdv_statut": zod.union([zod.literal('confirme'),zod.literal('annule'),zod.literal('absent'),zod.literal(null)]).nullish(),
+  "dernier_rdv_statut": zod.string().nullish(),
   "date_dernier_rdv": zod.string().nullish(),
   "date_prochain_rdv": zod.string().nullish(),
   "abonnement_actif": zod.boolean().nullish(),
@@ -171,6 +192,7 @@ export const UpdateClientBody = zod.object({
   "telephone": zod.string().optional(),
   "email": zod.string().optional(),
   "derniere_visite": zod.string().optional(),
+  "derniere_visite_via": zod.string().optional(),
   "frequence_moyenne_jours": zod.number().optional(),
   "dernier_rdv_statut": zod.enum(['confirme', 'annule', 'absent']).optional(),
   "date_dernier_rdv": zod.string().optional(),
@@ -187,9 +209,10 @@ export const UpdateClientResponse = zod.object({
   "email": zod.string().nullish(),
   "date_dernier_contact": zod.string().nullish(),
   "derniere_visite": zod.string().nullish(),
+  "derniere_visite_via": zod.string().nullish(),
   "frequence_moyenne_jours": zod.number().nullish(),
   "jour_habituel": zod.string().nullish(),
-  "dernier_rdv_statut": zod.union([zod.literal('confirme'),zod.literal('annule'),zod.literal('absent'),zod.literal(null)]).nullish(),
+  "dernier_rdv_statut": zod.string().nullish(),
   "date_dernier_rdv": zod.string().nullish(),
   "date_prochain_rdv": zod.string().nullish(),
   "abonnement_actif": zod.boolean().nullish(),
@@ -224,9 +247,10 @@ export const MarkClientVisitResponse = zod.object({
   "email": zod.string().nullish(),
   "date_dernier_contact": zod.string().nullish(),
   "derniere_visite": zod.string().nullish(),
+  "derniere_visite_via": zod.string().nullish(),
   "frequence_moyenne_jours": zod.number().nullish(),
   "jour_habituel": zod.string().nullish(),
-  "dernier_rdv_statut": zod.union([zod.literal('confirme'),zod.literal('annule'),zod.literal('absent'),zod.literal(null)]).nullish(),
+  "dernier_rdv_statut": zod.string().nullish(),
   "date_dernier_rdv": zod.string().nullish(),
   "date_prochain_rdv": zod.string().nullish(),
   "abonnement_actif": zod.boolean().nullish(),
@@ -247,13 +271,16 @@ export const ListAlertesResponseItem = zod.object({
   "id": zod.number(),
   "client_id": zod.number(),
   "user_id": zod.number(),
-  "type_signal": zod.enum(['silence', 'rupture_frequence', 'annulation_sans_reprise', 'non_renouvellement']),
+  "type_signal": zod.enum(['silence', 'rupture_frequence', 'annulation_sans_reprise', 'non_renouvellement', 'absence_jour_habituel']),
   "message": zod.string(),
   "message_relance_suggere": zod.string().nullish(),
   "gravite": zod.enum(['faible', 'moyenne', 'haute']),
   "statut": zod.enum(['non_lu', 'traite']),
+  "suivi_demande": zod.boolean().nullish(),
+  "suivi_repondu": zod.boolean().nullish(),
   "client_nom": zod.string(),
-  "created_at": zod.string()
+  "created_at": zod.string(),
+  "traite_at": zod.string().nullish()
 })
 export const ListAlertesResponse = zod.array(ListAlertesResponseItem)
 
@@ -269,13 +296,44 @@ export const TraiterAlerteResponse = zod.object({
   "id": zod.number(),
   "client_id": zod.number(),
   "user_id": zod.number(),
-  "type_signal": zod.enum(['silence', 'rupture_frequence', 'annulation_sans_reprise', 'non_renouvellement']),
+  "type_signal": zod.enum(['silence', 'rupture_frequence', 'annulation_sans_reprise', 'non_renouvellement', 'absence_jour_habituel']),
   "message": zod.string(),
   "message_relance_suggere": zod.string().nullish(),
   "gravite": zod.enum(['faible', 'moyenne', 'haute']),
   "statut": zod.enum(['non_lu', 'traite']),
+  "suivi_demande": zod.boolean().nullish(),
+  "suivi_repondu": zod.boolean().nullish(),
   "client_nom": zod.string(),
-  "created_at": zod.string()
+  "created_at": zod.string(),
+  "traite_at": zod.string().nullish()
+})
+
+
+/**
+ * @summary Post-relance follow-up (did the client respond?)
+ */
+export const SuiviAlerteParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SuiviAlerteBody = zod.object({
+  "repondu": zod.boolean()
+})
+
+export const SuiviAlerteResponse = zod.object({
+  "id": zod.number(),
+  "client_id": zod.number(),
+  "user_id": zod.number(),
+  "type_signal": zod.enum(['silence', 'rupture_frequence', 'annulation_sans_reprise', 'non_renouvellement', 'absence_jour_habituel']),
+  "message": zod.string(),
+  "message_relance_suggere": zod.string().nullish(),
+  "gravite": zod.enum(['faible', 'moyenne', 'haute']),
+  "statut": zod.enum(['non_lu', 'traite']),
+  "suivi_demande": zod.boolean().nullish(),
+  "suivi_repondu": zod.boolean().nullish(),
+  "client_nom": zod.string(),
+  "created_at": zod.string(),
+  "traite_at": zod.string().nullish()
 })
 
 
@@ -299,6 +357,79 @@ export const GetStatsResponse = zod.object({
   "alertes_par_type": zod.array(zod.object({
   "type_signal": zod.string(),
   "count": zod.number()
+})),
+  "alertes_en_attente_suivi": zod.number()
+})
+
+
+/**
+ * @summary Get public site data for a user slug
+ */
+export const GetSitePublicParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetSitePublicResponse = zod.object({
+  "slug": zod.string(),
+  "nom_activite": zod.string(),
+  "description_activite": zod.string().nullish(),
+  "client_ideal": zod.string().nullish(),
+  "reduction_offerte": zod.string().nullish(),
+  "categorie_activite": zod.string()
+})
+
+
+/**
+ * @summary Submit contact form from public site
+ */
+export const SubmitContactParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const SubmitContactBody = zod.object({
+  "nom": zod.string(),
+  "telephone": zod.string().optional(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+export const SubmitContactResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Submit feedback for an alert
+ */
+export const SubmitFeedbackBody = zod.object({
+  "alerte_id": zod.number(),
+  "type_feedback": zod.enum(['alerte_utile', 'alerte_pas_utile', 'relance_reussie', 'relance_echouee', 'suggestion']),
+  "commentaire": zod.string().optional()
+})
+
+export const SubmitFeedbackResponse = zod.object({
+  "id": zod.number(),
+  "type_feedback": zod.string(),
+  "created_at": zod.string()
+})
+
+
+/**
+ * @summary Get current user's affiliation stats and filleuls
+ */
+export const GetMyAffiliationsResponse = zod.object({
+  "code_parrainage": zod.string(),
+  "lien_parrainage": zod.string(),
+  "total_filleuls": zod.number(),
+  "filleuls_actifs": zod.number(),
+  "commission_totale_estimee": zod.number(),
+  "filleuls": zod.array(zod.object({
+  "id": zod.number(),
+  "nom_activite": zod.string(),
+  "statut_actif": zod.boolean(),
+  "taux_commission_actuel": zod.number(),
+  "created_at": zod.string()
 }))
 })
 

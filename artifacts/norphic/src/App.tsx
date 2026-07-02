@@ -8,6 +8,8 @@ import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Alertes from "@/pages/alerts";
 import Parametres from "@/pages/settings";
+import SitePublic from "@/pages/site-public";
+import Affiliations from "@/pages/affiliations";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,8 @@ function Router() {
       <Route path="/clients" component={Clients} />
       <Route path="/alertes" component={Alertes} />
       <Route path="/parametres" component={Parametres} />
+      <Route path="/affiliations" component={Affiliations} />
+      <Route path="/site/:slug" component={SitePublic} />
       <Route component={NotFound} />
     </Switch>
   );

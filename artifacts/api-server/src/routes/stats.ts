@@ -4,7 +4,6 @@ import { clientsTable, alertesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 
 const router = Router();
-
 const DEMO_USER_ID = 1;
 
 router.get("/stats", async (_req, res) => {
@@ -29,22 +28,24 @@ router.get("/stats", async (_req, res) => {
     const clients_ok = Math.max(0, total_clients - clients_a_risque);
 
     const alertesParType = await db
-      .select({
-        type_signal: alertesTable.type_signal,
-        count: sql<number>`count(*)::int`,
-      })
+      .select({ type_signal: alertesTable.type_signal, count: sql<number>`count(*)::int` })
       .from(alertesTable)
       .where(and(eq(alertesTable.user_id, DEMO_USER_ID), eq(alertesTable.statut, "non_lu")))
       .groupBy(alertesTable.type_signal);
 
-    return res.json({
-      total_clients,
-      alertes_actives,
-      clients_a_risque,
-      clients_ok,
-      alertes_par_type: alertesParType,
-    });
-  } catch (err) {
+    const [{ alertes_en_attente_suivi }] = await db
+      .select({ alertes_en_attente_suivi: sql<number>`count(*)::int` })
+      .from(alertesTable)
+      .where(
+        and(
+          eq(alertesTable.user_id, DEMO_USER_ID),
+          eq(alertesTable.statut, "traite"),
+          eq(alertesTable.suivi_demande, false)
+        )
+      );
+
+    return res.json({ total_clients, alertes_actives, clients_a_risque, clients_ok, alertes_par_type: alertesParType, alertes_en_attente_suivi });
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });

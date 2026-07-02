@@ -27,6 +27,9 @@ const formSchema = z.object({
     required_error: "Veuillez sélectionner une catégorie.",
   }),
   description_activite: z.string().optional(),
+  client_ideal: z.string().optional(),
+  reduction_offerte: z.string().optional(),
+  code_parrainage_parrain: z.string().optional(),
 });
 
 export default function Onboarding() {
@@ -49,6 +52,9 @@ export default function Onboarding() {
     defaultValues: {
       nom_activite: "",
       description_activite: "",
+      client_ideal: "",
+      reduction_offerte: "",
+      code_parrainage_parrain: "",
     },
   });
 
@@ -84,7 +90,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30 py-12">
       <div className="max-w-2xl w-full">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-serif text-foreground tracking-tight">Norphic</h1>
@@ -191,7 +197,56 @@ export default function Onboarding() {
                   )}
                 />
 
-                <Button type="submit" className="w-full text-lg h-12 font-serif" disabled={setupUser.isPending}>
+                <FormField
+                  control={form.control}
+                  name="client_ideal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qui est votre client idéal ? (Optionnel)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Ex: Les personnes stressées cherchant à se recentrer..." 
+                          className="resize-none bg-background" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="reduction_offerte"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Réduction pour réservation en ligne (Optionnel)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 5%, 10€, Premier bilan offert..." {...field} className="bg-background" />
+                      </FormControl>
+                      <FormDescription>Cette offre sera mise en avant sur votre site public.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="pt-4 pb-2">
+                  <FormField
+                    control={form.control}
+                    name="code_parrainage_parrain"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground text-sm font-normal">Vous avez un code de parrainage ? (Optionnel)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Code" {...field} className="bg-background max-w-[200px]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full text-lg h-12 font-serif mt-4" disabled={setupUser.isPending}>
                   {setupUser.isPending ? "Configuration..." : "Entrer dans l'espace"}
                 </Button>
               </form>

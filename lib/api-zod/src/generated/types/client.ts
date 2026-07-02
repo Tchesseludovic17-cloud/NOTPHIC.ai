@@ -5,7 +5,6 @@
  * API specification for Norphic
  * OpenAPI spec version: 0.1.0
  */
-import type { ClientDernierRdvStatut } from './clientDernierRdvStatut';
 
 export interface Client {
   id: number;
@@ -20,11 +19,13 @@ export interface Client {
   /** @nullable */
   derniere_visite?: string | null;
   /** @nullable */
+  derniere_visite_via?: string | null;
+  /** @nullable */
   frequence_moyenne_jours?: number | null;
   /** @nullable */
   jour_habituel?: string | null;
   /** @nullable */
-  dernier_rdv_statut?: ClientDernierRdvStatut;
+  dernier_rdv_statut?: string | null;
   /** @nullable */
   date_dernier_rdv?: string | null;
   /** @nullable */

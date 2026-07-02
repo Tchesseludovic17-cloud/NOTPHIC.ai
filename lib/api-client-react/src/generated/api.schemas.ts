@@ -22,15 +22,31 @@ export const UserCategorieActivite = {
   service_independant: 'service_independant',
 } as const;
 
+export type UserPlan = typeof UserPlan[keyof typeof UserPlan];
+
+
+export const UserPlan = {
+  gratuit: 'gratuit',
+  essentiel: 'essentiel',
+  pro: 'pro',
+} as const;
+
 export interface User {
   id: number;
   /** @nullable */
   email?: string | null;
   nom_activite: string;
+  slug: string;
   categorie_activite: UserCategorieActivite;
   /** @nullable */
   description_activite?: string | null;
-  plan: string;
+  /** @nullable */
+  client_ideal?: string | null;
+  /** @nullable */
+  reduction_offerte?: string | null;
+  plan: UserPlan;
+  /** @nullable */
+  code_parrainage?: string | null;
   created_at: string;
 }
 
@@ -47,7 +63,10 @@ export interface UserInput {
   nom_activite: string;
   categorie_activite: UserInputCategorieActivite;
   description_activite?: string;
+  client_ideal?: string;
+  reduction_offerte?: string;
   email?: string;
+  code_parrainage_parrain?: string;
 }
 
 export type UserUpdateCategorieActivite = typeof UserUpdateCategorieActivite[keyof typeof UserUpdateCategorieActivite];
@@ -63,20 +82,10 @@ export interface UserUpdate {
   nom_activite?: string;
   categorie_activite?: UserUpdateCategorieActivite;
   description_activite?: string;
+  client_ideal?: string;
+  reduction_offerte?: string;
   email?: string;
 }
-
-/**
- * @nullable
- */
-export type ClientDernierRdvStatut = typeof ClientDernierRdvStatut[keyof typeof ClientDernierRdvStatut] | null;
-
-
-export const ClientDernierRdvStatut = {
-  confirme: 'confirme',
-  annule: 'annule',
-  absent: 'absent',
-} as const;
 
 export interface Client {
   id: number;
@@ -91,11 +100,13 @@ export interface Client {
   /** @nullable */
   derniere_visite?: string | null;
   /** @nullable */
+  derniere_visite_via?: string | null;
+  /** @nullable */
   frequence_moyenne_jours?: number | null;
   /** @nullable */
   jour_habituel?: string | null;
   /** @nullable */
-  dernier_rdv_statut?: ClientDernierRdvStatut;
+  dernier_rdv_statut?: string | null;
   /** @nullable */
   date_dernier_rdv?: string | null;
   /** @nullable */
@@ -122,6 +133,7 @@ export interface ClientInput {
   telephone?: string;
   email?: string;
   derniere_visite?: string;
+  derniere_visite_via?: string;
   frequence_moyenne_jours?: number;
   dernier_rdv_statut?: ClientInputDernierRdvStatut;
   date_dernier_rdv?: string;
@@ -144,6 +156,7 @@ export interface ClientUpdate {
   telephone?: string;
   email?: string;
   derniere_visite?: string;
+  derniere_visite_via?: string;
   frequence_moyenne_jours?: number;
   dernier_rdv_statut?: ClientUpdateDernierRdvStatut;
   date_dernier_rdv?: string;
@@ -160,6 +173,7 @@ export const AlerteTypeSignal = {
   rupture_frequence: 'rupture_frequence',
   annulation_sans_reprise: 'annulation_sans_reprise',
   non_renouvellement: 'non_renouvellement',
+  absence_jour_habituel: 'absence_jour_habituel',
 } as const;
 
 export type AlerteGravite = typeof AlerteGravite[keyof typeof AlerteGravite];
@@ -189,8 +203,18 @@ export interface Alerte {
   message_relance_suggere?: string | null;
   gravite: AlerteGravite;
   statut: AlerteStatut;
+  /** @nullable */
+  suivi_demande?: boolean | null;
+  /** @nullable */
+  suivi_repondu?: boolean | null;
   client_nom: string;
   created_at: string;
+  /** @nullable */
+  traite_at?: string | null;
+}
+
+export interface SuiviInput {
+  repondu: boolean;
 }
 
 export interface DetectionResult {
@@ -209,6 +233,71 @@ export interface Stats {
   clients_a_risque: number;
   clients_ok: number;
   alertes_par_type: AlerteTypeCount[];
+  alertes_en_attente_suivi: number;
+}
+
+export interface SitePublic {
+  slug: string;
+  nom_activite: string;
+  /** @nullable */
+  description_activite?: string | null;
+  /** @nullable */
+  client_ideal?: string | null;
+  /** @nullable */
+  reduction_offerte?: string | null;
+  categorie_activite: string;
+}
+
+export interface ContactInput {
+  nom: string;
+  telephone?: string;
+  email?: string;
+  message?: string;
+}
+
+export interface ContactResult {
+  success: boolean;
+  message: string;
+}
+
+export type FeedbackInputTypeFeedback = typeof FeedbackInputTypeFeedback[keyof typeof FeedbackInputTypeFeedback];
+
+
+export const FeedbackInputTypeFeedback = {
+  alerte_utile: 'alerte_utile',
+  alerte_pas_utile: 'alerte_pas_utile',
+  relance_reussie: 'relance_reussie',
+  relance_echouee: 'relance_echouee',
+  suggestion: 'suggestion',
+} as const;
+
+export interface FeedbackInput {
+  alerte_id: number;
+  type_feedback: FeedbackInputTypeFeedback;
+  commentaire?: string;
+}
+
+export interface FeedbackResponse {
+  id: number;
+  type_feedback: string;
+  created_at: string;
+}
+
+export interface FilleulItem {
+  id: number;
+  nom_activite: string;
+  statut_actif: boolean;
+  taux_commission_actuel: number;
+  created_at: string;
+}
+
+export interface AffiliationStats {
+  code_parrainage: string;
+  lien_parrainage: string;
+  total_filleuls: number;
+  filleuls_actifs: number;
+  commission_totale_estimee: number;
+  filleuls: FilleulItem[];
 }
 
 export type ListAlertesParams = {

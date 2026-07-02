@@ -1,38 +1,44 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { alertesTable, clientsTable } from "@workspace/db";
+import { alertesTable, clientsTable, feedbackTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
-
 const DEMO_USER_ID = 1;
+
+async function formatAlerte(alerte: typeof alertesTable.$inferSelect) {
+  const [client] = await db.select({ nom: clientsTable.nom }).from(clientsTable).where(eq(clientsTable.id, alerte.client_id)).limit(1);
+  return {
+    ...alerte,
+    client_nom: client?.nom ?? "Client inconnu",
+    created_at: alerte.created_at.toISOString(),
+    traite_at: alerte.traite_at?.toISOString() ?? null,
+  };
+}
 
 router.get("/alertes", async (req, res) => {
   try {
     const { statut } = req.query;
-
-    let alertes = await db
-      .select({
-        alerte: alertesTable,
-        client_nom: clientsTable.nom,
-      })
+    let rows = await db
+      .select({ alerte: alertesTable, client_nom: clientsTable.nom })
       .from(alertesTable)
       .leftJoin(clientsTable, eq(alertesTable.client_id, clientsTable.id))
       .where(eq(alertesTable.user_id, DEMO_USER_ID))
       .orderBy(alertesTable.created_at);
 
     if (statut && statut !== "tous") {
-      alertes = alertes.filter((a) => a.alerte.statut === statut);
+      rows = rows.filter((r) => r.alerte.statut === statut);
     }
 
-    const result = alertes.map((a) => ({
-      ...a.alerte,
-      client_nom: a.client_nom ?? "Client inconnu",
-      created_at: a.alerte.created_at.toISOString(),
-    }));
-
-    return res.json(result);
-  } catch (err) {
+    return res.json(
+      rows.map((r) => ({
+        ...r.alerte,
+        client_nom: r.client_nom ?? "Client inconnu",
+        created_at: r.alerte.created_at.toISOString(),
+        traite_at: r.alerte.traite_at?.toISOString() ?? null,
+      }))
+    );
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -44,24 +50,41 @@ router.patch("/alertes/:id/traiter", async (req, res) => {
 
     const [alerte] = await db
       .update(alertesTable)
-      .set({ statut: "traite" })
+      .set({ statut: "traite", traite_at: new Date(), suivi_demande: false })
+      .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, DEMO_USER_ID)))
+      .returning();
+
+    if (!alerte) return res.status(404).json({ error: "Alerte non trouvée" });
+    return res.json(await formatAlerte(alerte));
+  } catch {
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.post("/alertes/:id/suivi", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
+    const { repondu } = req.body as { repondu: boolean };
+    const typeFeedback = repondu ? "relance_reussie" : "relance_echouee";
+
+    const [alerte] = await db
+      .update(alertesTable)
+      .set({ suivi_demande: true, suivi_repondu: repondu })
       .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, DEMO_USER_ID)))
       .returning();
 
     if (!alerte) return res.status(404).json({ error: "Alerte non trouvée" });
 
-    const [client] = await db
-      .select({ nom: clientsTable.nom })
-      .from(clientsTable)
-      .where(eq(clientsTable.id, alerte.client_id))
-      .limit(1);
-
-    return res.json({
-      ...alerte,
-      client_nom: client?.nom ?? "Client inconnu",
-      created_at: alerte.created_at.toISOString(),
+    await db.insert(feedbackTable).values({
+      user_id: DEMO_USER_ID,
+      alerte_id: id,
+      type_feedback: typeFeedback,
     });
-  } catch (err) {
+
+    return res.json(await formatAlerte(alerte));
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });

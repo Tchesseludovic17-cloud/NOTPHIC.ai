@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Bell, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Bell, Settings, LogOut, Gift } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -11,6 +11,7 @@ export function Layout({ children }: { children: ReactNode }) {
     { name: "Vue d'ensemble", href: "/dashboard", icon: LayoutDashboard },
     { name: "Clients", href: "/clients", icon: Users },
     { name: "Alertes", href: "/alertes", icon: Bell },
+    { name: "Affiliations", href: "/affiliations", icon: Gift },
   ];
 
   return (

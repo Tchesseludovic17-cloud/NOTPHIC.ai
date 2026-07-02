@@ -11,5 +11,7 @@ export interface UserUpdate {
   nom_activite?: string;
   categorie_activite?: UserUpdateCategorieActivite;
   description_activite?: string;
+  client_ideal?: string;
+  reduction_offerte?: string;
   email?: string;
 }

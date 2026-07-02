@@ -12,6 +12,7 @@ export interface ClientInput {
   telephone?: string;
   email?: string;
   derniere_visite?: string;
+  derniere_visite_via?: string;
   frequence_moyenne_jours?: number;
   dernier_rdv_statut?: ClientInputDernierRdvStatut;
   date_dernier_rdv?: string;

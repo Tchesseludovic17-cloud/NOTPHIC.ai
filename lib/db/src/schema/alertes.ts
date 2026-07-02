@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clientsTable } from "./clients";
@@ -13,6 +13,9 @@ export const alertesTable = pgTable("alertes", {
   message_relance_suggere: text("message_relance_suggere"),
   gravite: text("gravite").notNull().default("moyenne"),
   statut: text("statut").notNull().default("non_lu"),
+  suivi_demande: boolean("suivi_demande").default(false),
+  suivi_repondu: boolean("suivi_repondu"),
+  traite_at: timestamp("traite_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 

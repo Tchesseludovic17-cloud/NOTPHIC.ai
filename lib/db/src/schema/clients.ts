@@ -11,6 +11,7 @@ export const clientsTable = pgTable("clients", {
   email: text("email"),
   date_dernier_contact: date("date_dernier_contact"),
   derniere_visite: date("derniere_visite"),
+  derniere_visite_via: text("derniere_visite_via"),
   frequence_moyenne_jours: integer("frequence_moyenne_jours"),
   jour_habituel: text("jour_habituel"),
   dernier_rdv_statut: text("dernier_rdv_statut"),

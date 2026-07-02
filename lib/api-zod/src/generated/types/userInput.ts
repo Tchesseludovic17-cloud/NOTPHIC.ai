@@ -11,5 +11,8 @@ export interface UserInput {
   nom_activite: string;
   categorie_activite: UserInputCategorieActivite;
   description_activite?: string;
+  client_ideal?: string;
+  reduction_offerte?: string;
   email?: string;
+  code_parrainage_parrain?: string;
 }

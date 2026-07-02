@@ -6,26 +6,35 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './affiliationStats';
 export * from './alerte';
 export * from './alerteGravite';
 export * from './alerteStatut';
 export * from './alerteTypeCount';
 export * from './alerteTypeSignal';
 export * from './client';
-export * from './clientDernierRdvStatut';
 export * from './clientInput';
 export * from './clientInputDernierRdvStatut';
 export * from './clientUpdate';
 export * from './clientUpdateDernierRdvStatut';
+export * from './contactInput';
+export * from './contactResult';
 export * from './detectionResult';
 export * from './errorResponse';
+export * from './feedbackInput';
+export * from './feedbackInputTypeFeedback';
+export * from './feedbackResponse';
+export * from './filleulItem';
 export * from './healthStatus';
 export * from './listAlertesParams';
 export * from './listAlertesStatut';
+export * from './sitePublic';
 export * from './stats';
+export * from './suiviInput';
 export * from './user';
 export * from './userCategorieActivite';
 export * from './userInput';
 export * from './userInputCategorieActivite';
+export * from './userPlan';
 export * from './userUpdate';
 export * from './userUpdateCategorieActivite';

@@ -8,17 +8,14 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: users
-    description: User profile & onboarding
   - name: clients
-    description: CRM client management
   - name: alertes
-    description: Alert management
   - name: detection
-    description: Detection engine
   - name: stats
-    description: Dashboard statistics
+  - name: site
+  - name: feedback
+  - name: affiliations
 
 paths:
   /healthz:
@@ -47,7 +44,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
         "404":
-          description: No user found (onboarding not done)
+          description: No user found
           content:
             application/json:
               schema:
@@ -242,6 +239,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/Alerte"
 
+  /alertes/{id}/suivi:
+    post:
+      operationId: suiviAlerte
+      tags: [alertes]
+      summary: Post-relance follow-up (did the client respond?)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuiviInput"
+      responses:
+        "200":
+          description: Follow-up recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alerte"
+
   /detection/run:
     post:
       operationId: runDetection
@@ -268,6 +290,88 @@ paths:
               schema:
                 $ref: "#/components/schemas/Stats"
 
+  /site/{slug}:
+    get:
+      operationId: getSitePublic
+      tags: [site]
+      summary: Get public site data for a user slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public site data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SitePublic"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /site/{slug}/contact:
+    post:
+      operationId: submitContact
+      tags: [site]
+      summary: Submit contact form from public site
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "200":
+          description: Contact received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactResult"
+
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit feedback for an alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "201":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+
+  /affiliations/me:
+    get:
+      operationId: getMyAffiliations
+      tags: [affiliations]
+      summary: Get current user's affiliation stats and filleuls
+      responses:
+        "200":
+          description: Affiliation data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AffiliationStats"
+
 components:
   schemas:
     HealthStatus:
@@ -275,16 +379,14 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
     ErrorResponse:
       type: object
       properties:
         error:
           type: string
-      required:
-        - error
+      required: [error]
 
     User:
       type: object
@@ -295,21 +397,25 @@ components:
           type: ["string", "null"]
         nom_activite:
           type: string
+        slug:
+          type: string
         categorie_activite:
           type: string
           enum: [rendez_vous_regulier, commerce_fidele, service_independant]
         description_activite:
           type: ["string", "null"]
+        client_ideal:
+          type: ["string", "null"]
+        reduction_offerte:
+          type: ["string", "null"]
         plan:
           type: string
+          enum: [gratuit, essentiel, pro]
+        code_parrainage:
+          type: ["string", "null"]
         created_at:
           type: string
-      required:
-        - id
-        - nom_activite
-        - categorie_activite
-        - plan
-        - created_at
+      required: [id, nom_activite, slug, categorie_activite, plan, created_at]
 
     UserInput:
       type: object
@@ -321,11 +427,15 @@ components:
           enum: [rendez_vous_regulier, commerce_fidele, service_independant]
         description_activite:
           type: string
+        client_ideal:
+          type: string
+        reduction_offerte:
+          type: string
         email:
           type: string
-      required:
-        - nom_activite
-        - categorie_activite
+        code_parrainage_parrain:
+          type: string
+      required: [nom_activite, categorie_activite]
 
     UserUpdate:
       type: object
@@ -336,6 +446,10 @@ components:
           type: string
           enum: [rendez_vous_regulier, commerce_fidele, service_independant]
         description_activite:
+          type: string
+        client_ideal:
+          type: string
+        reduction_offerte:
           type: string
         email:
           type: string
@@ -357,13 +471,14 @@ components:
           type: ["string", "null"]
         derniere_visite:
           type: ["string", "null"]
+        derniere_visite_via:
+          type: ["string", "null"]
         frequence_moyenne_jours:
           type: ["integer", "null"]
         jour_habituel:
           type: ["string", "null"]
         dernier_rdv_statut:
           type: ["string", "null"]
-          enum: ["confirme", "annule", "absent", null]
         date_dernier_rdv:
           type: ["string", "null"]
         date_prochain_rdv:
@@ -376,12 +491,7 @@ components:
           type: integer
         created_at:
           type: string
-      required:
-        - id
-        - user_id
-        - nom
-        - nb_alertes_actives
-        - created_at
+      required: [id, user_id, nom, nb_alertes_actives, created_at]
 
     ClientInput:
       type: object
@@ -393,6 +503,8 @@ components:
         email:
           type: string
         derniere_visite:
+          type: string
+        derniere_visite_via:
           type: string
         frequence_moyenne_jours:
           type: integer
@@ -407,8 +519,7 @@ components:
           type: boolean
         abonnement_date_renouvellement:
           type: string
-      required:
-        - nom
+      required: [nom]
 
     ClientUpdate:
       type: object
@@ -420,6 +531,8 @@ components:
         email:
           type: string
         derniere_visite:
+          type: string
+        derniere_visite_via:
           type: string
         frequence_moyenne_jours:
           type: integer
@@ -446,7 +559,7 @@ components:
           type: integer
         type_signal:
           type: string
-          enum: [silence, rupture_frequence, annulation_sans_reprise, non_renouvellement]
+          enum: [silence, rupture_frequence, annulation_sans_reprise, non_renouvellement, absence_jour_habituel]
         message:
           type: string
         message_relance_suggere:
@@ -457,20 +570,24 @@ components:
         statut:
           type: string
           enum: [non_lu, traite]
+        suivi_demande:
+          type: ["boolean", "null"]
+        suivi_repondu:
+          type: ["boolean", "null"]
         client_nom:
           type: string
         created_at:
           type: string
-      required:
-        - id
-        - client_id
-        - user_id
-        - type_signal
-        - message
-        - gravite
-        - statut
-        - client_nom
-        - created_at
+        traite_at:
+          type: ["string", "null"]
+      required: [id, client_id, user_id, type_signal, message, gravite, statut, client_nom, created_at]
+
+    SuiviInput:
+      type: object
+      properties:
+        repondu:
+          type: boolean
+      required: [repondu]
 
     DetectionResult:
       type: object
@@ -479,9 +596,7 @@ components:
           type: integer
         message:
           type: string
-      required:
-        - alertes_creees
-        - message
+      required: [alertes_creees, message]
 
     Stats:
       type: object
@@ -498,12 +613,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AlerteTypeCount"
-      required:
-        - total_clients
-        - alertes_actives
-        - clients_a_risque
-        - clients_ok
-        - alertes_par_type
+        alertes_en_attente_suivi:
+          type: integer
+      required: [total_clients, alertes_actives, clients_a_risque, clients_ok, alertes_par_type, alertes_en_attente_suivi]
 
     AlerteTypeCount:
       type: object
@@ -512,6 +624,100 @@ components:
           type: string
         count:
           type: integer
-      required:
-        - type_signal
-        - count
+      required: [type_signal, count]
+
+    SitePublic:
+      type: object
+      properties:
+        slug:
+          type: string
+        nom_activite:
+          type: string
+        description_activite:
+          type: ["string", "null"]
+        client_ideal:
+          type: ["string", "null"]
+        reduction_offerte:
+          type: ["string", "null"]
+        categorie_activite:
+          type: string
+      required: [slug, nom_activite, categorie_activite]
+
+    ContactInput:
+      type: object
+      properties:
+        nom:
+          type: string
+        telephone:
+          type: string
+        email:
+          type: string
+        message:
+          type: string
+      required: [nom]
+
+    ContactResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success, message]
+
+    FeedbackInput:
+      type: object
+      properties:
+        alerte_id:
+          type: integer
+        type_feedback:
+          type: string
+          enum: [alerte_utile, alerte_pas_utile, relance_reussie, relance_echouee, suggestion]
+        commentaire:
+          type: string
+      required: [alerte_id, type_feedback]
+
+    FeedbackResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        type_feedback:
+          type: string
+        created_at:
+          type: string
+      required: [id, type_feedback, created_at]
+
+    AffiliationStats:
+      type: object
+      properties:
+        code_parrainage:
+          type: string
+        lien_parrainage:
+          type: string
+        total_filleuls:
+          type: integer
+        filleuls_actifs:
+          type: integer
+        commission_totale_estimee:
+          type: number
+        filleuls:
+          type: array
+          items:
+            $ref: "#/components/schemas/FilleulItem"
+      required: [code_parrainage, lien_parrainage, total_filleuls, filleuls_actifs, commission_totale_estimee, filleuls]
+
+    FilleulItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom_activite:
+          type: string
+        statut_actif:
+          type: boolean
+        taux_commission_actuel:
+          type: number
+        created_at:
+          type: string
+      required: [id, nom_activite, statut_actif, taux_commission_actuel, created_at]

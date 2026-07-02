@@ -6,15 +6,23 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UserCategorieActivite } from './userCategorieActivite';
+import type { UserPlan } from './userPlan';
 
 export interface User {
   id: number;
   /** @nullable */
   email?: string | null;
   nom_activite: string;
+  slug: string;
   categorie_activite: UserCategorieActivite;
   /** @nullable */
   description_activite?: string | null;
-  plan: string;
+  /** @nullable */
+  client_ideal?: string | null;
+  /** @nullable */
+  reduction_offerte?: string | null;
+  plan: UserPlan;
+  /** @nullable */
+  code_parrainage?: string | null;
   created_at: string;
 }

@@ -1,0 +1,45 @@
+Je veux construire une application web appelée Norphic — un SaaS qui aide les indépendants (coachs, consultants, petits commerces) à repérer automatiquement quand un client s'éloigne, avant de le perdre définitivement. L'application a deux parties : un site public généré pour chaque utilisateur, et un espace privé (CRM + alertes) pour gérer son activité.
+
+STACK SOUHAITÉE : Next.js, base de données intégrée (PostgreSQL si possible).
+
+FONCTIONNALITÉS DE LA V1 :
+
+1. ONBOARDING — Un formulaire qui demande :
+   - Le nom de son activité
+   - Une description libre et détaillée de ce qu'il fait
+   - Qui est son client idéal (description libre)
+   - Sa catégorie d'activité : "rendez_vous_regulier", "commerce_fidele", ou "service_independant"
+   - Une réduction pour réservation en ligne (exemple : "5%")
+
+2. GÉNÉRATION AUTOMATIQUE DU SITE PUBLIC — Une page publique professionnelle générée à partir des réponses, avec titre, présentation de l'offre, section "à qui ça s'adresse", mention de la réduction. Design simple et moderne, sans template générique, sans 3D. URL unique par utilisateur.
+
+3. FORMULAIRE DE CONTACT SUR LE SITE PUBLIC — Nom, téléphone, email, demande. Crée ou met à jour automatiquement le client dans la base, visite marquée "via site_en_ligne".
+
+4. BASE DE DONNÉES — Ces tables :
+   - users (id, email, nom_activite, categorie_activite, description_activite, client_ideal, reduction_offerte, plan par défaut "gratuit" — valeurs possibles "gratuit", "essentiel", "pro")
+   - clients (id, user_id, nom, telephone, email, date_dernier_contact, derniere_visite, frequence_moyenne_jours, jour_habituel, dernier_rdv_statut, date_dernier_rdv, date_prochain_rdv, abonnement_actif, abonnement_date_renouvellement, derniere_visite_via)
+   - historique_visites (id, client_id, date_visite, via)
+   - alertes (id, client_id, user_id, type_signal, message, message_relance_suggere, gravite, statut par défaut "non_lu")
+   - feedback (id, user_id, alerte_id, type_feedback — valeurs "alerte_utile", "alerte_pas_utile", "relance_reussie", "relance_echouee", "suggestion", commentaire)
+   - affiliations (id, user_id_parrain, user_id_filleul, date_creation, statut actif, taux_commission_actuel)
+
+5. INTERFACE CRM PRIVÉE — Liste des clients, ajout manuel pour visites sur place, bouton "ce client est venu aujourd'hui".
+
+6. MOTEUR DE DÉTECTION — Fonction quotidienne, pour chaque client :
+   - SILENCE : aucun contact depuis 5 jours (2 jours si commerce_fidele)
+   - RUPTURE DE FRÉQUENCE : pas revenu depuis plus de 1.5 fois sa fréquence moyenne
+   - ANNULATION SANS REPRISE : rendez-vous annulé sans reprise depuis 7 jours
+   - NON-RENOUVELLEMENT : abonnement non renouvelé le jour prévu
+   - ABSENCE JOUR HABITUEL (catégorie commerce_fidele uniquement) : n'est pas venu à son jour habituel de la semaine, déduit automatiquement de l'historique (au moins 3 visites, 60% sur le même jour pour être considéré comme habituel)
+
+7. MESSAGE DE RELANCE PRÉ-RÉDIGÉ — Pour chaque alerte, générer automatiquement un message court et chaleureux prêt à copier-coller, à partir d'un modèle de texte simple selon le type de signal (PAS d'appel API pour l'instant, budget non disponible) — exemple pour rupture_frequence : "Bonjour [nom], j'espère que vous allez bien ! Ça fait un moment qu'on ne s'est pas vus, n'hésitez pas si vous souhaitez reprendre rendez-vous." Prévoir une fonction séparée et clairement identifiée, facile à remplacer plus tard par un appel à l'API Claude quand le budget sera disponible.
+
+8. TABLEAU D'ALERTES — Alertes actives avec message factuel, message de relance suggéré, bouton "copier le message", bouton pour marquer comme traitée, et deux boutons de feedback "Utile" / "Pas utile" qui enregistrent dans la table feedback.
+
+9. SUIVI POST-RELANCE — Quelques jours après qu'une alerte a été marquée "traitée", afficher une question simple : "Le client a-t-il répondu ?" (oui/non), enregistrée dans feedback comme "relance_reussie" ou "relance_echouee".
+
+10. SYSTÈME D'AFFILIATION — Chaque utilisateur a un lien de parrainage unique. Quand un nouvel utilisateur s'inscrit via ce lien, créer une entrée dans affiliations. Commission de 20% sur le premier mois payé du filleul, puis 10% les mois suivants tant qu'il reste actif, uniquement si le filleul reste actif au moins 30 jours. Pas de limite de nombre de filleuls.
+
+ORDRE DE CONSTRUCTION : base de données, onboarding, génération du site public, formulaire de contact, CRM privé, moteur de détection, messages de relance (modèle simple sans API), tableau d'alertes avec feedback, suivi post-relance, système d'affiliation.
+
+Explique-moi chaque étape simplement au fur et à mesure, je ne suis pas développeuse.

@@ -13,4 +13,5 @@ export interface Stats {
   clients_a_risque: number;
   clients_ok: number;
   alertes_par_type: AlerteTypeCount[];
+  alertes_en_attente_suivi: number;
 }

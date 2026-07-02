@@ -14,4 +14,5 @@ export const AlerteTypeSignal = {
   rupture_frequence: 'rupture_frequence',
   annulation_sans_reprise: 'annulation_sans_reprise',
   non_renouvellement: 'non_renouvellement',
+  absence_jour_habituel: 'absence_jour_habituel',
 } as const;
