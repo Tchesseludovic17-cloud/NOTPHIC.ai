@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { clientsTable, alertesTable, usersTable, historiqueVisitesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { requireAuth, AuthRequest } from "../middlewares/requireAuth";
 
 const router = Router();
-const DEMO_USER_ID = 1;
 
 function daysBetween(a: Date, b: Date): number {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
@@ -44,10 +44,10 @@ async function alerteExiste(clientId: number, type: string): Promise<boolean> {
   return r.length > 0;
 }
 
-async function creeAlerte(clientId: number, type: string, message: string, relance: string, gravite: string) {
+async function creeAlerte(clientId: number, userId: number, type: string, message: string, relance: string, gravite: string) {
   await db.insert(alertesTable).values({
     client_id: clientId,
-    user_id: DEMO_USER_ID,
+    user_id: userId,
     type_signal: type,
     message,
     message_relance_suggere: relance,
@@ -56,12 +56,13 @@ async function creeAlerte(clientId: number, type: string, message: string, relan
   });
 }
 
-router.post("/detection/run", async (_req, res) => {
+router.post("/detection/run", requireAuth, async (req, res) => {
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, DEMO_USER_ID)).limit(1);
+    const userId = (req as AuthRequest).userId;
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
     if (!user) return res.json({ alertes_creees: 0, message: "Aucun utilisateur trouvé" });
 
-    const clients = await db.select().from(clientsTable).where(eq(clientsTable.user_id, DEMO_USER_ID));
+    const clients = await db.select().from(clientsTable).where(eq(clientsTable.user_id, userId));
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -78,46 +79,41 @@ router.post("/detection/run", async (_req, res) => {
       const dateRef = derniereVisite ?? dateContact;
       const joursDepuis = dateRef ? daysBetween(dateRef, today) : null;
 
-      // RULE 1 — SILENCE
       const silenceSeuil = isCommerceFidele ? 2 : 5;
       if (joursDepuis !== null && joursDepuis >= silenceSeuil && !(await alerteExiste(client.id, "silence"))) {
         const msg = `${client.nom} n'a pas donné signe de vie depuis ${joursDepuis} jour${joursDepuis > 1 ? "s" : ""}.`;
-        await creeAlerte(client.id, "silence", msg, genRelance("silence", client.nom), joursDepuis >= 10 ? "haute" : "moyenne");
+        await creeAlerte(client.id, userId, "silence", msg, genRelance("silence", client.nom), joursDepuis >= 10 ? "haute" : "moyenne");
         alertesCreees++;
       }
 
-      // RULE 2 — RUPTURE DE FRÉQUENCE
       if (client.frequence_moyenne_jours && client.frequence_moyenne_jours > 0 && joursDepuis !== null) {
         const seuil = client.frequence_moyenne_jours * 1.5;
         if (joursDepuis >= seuil && !(await alerteExiste(client.id, "rupture_frequence"))) {
           const msg = `${client.nom} venait en moyenne tous les ${client.frequence_moyenne_jours} jours, mais cela fait ${joursDepuis} jours qu'il/elle n'est pas revenu(e).`;
-          await creeAlerte(client.id, "rupture_frequence", msg, genRelance("rupture_frequence", client.nom), "haute");
+          await creeAlerte(client.id, userId, "rupture_frequence", msg, genRelance("rupture_frequence", client.nom), "haute");
           alertesCreees++;
         }
       }
 
-      // RULE 3 — ANNULATION SANS REPRISE
       if (client.dernier_rdv_statut === "annule" && dateDernierRdv) {
         const joursAnnul = daysBetween(dateDernierRdv, today);
         const pasDeNouveau = !dateProchainRdv || dateProchainRdv <= today;
         if (joursAnnul >= 7 && pasDeNouveau && !(await alerteExiste(client.id, "annulation_sans_reprise"))) {
           const msg = `${client.nom} a annulé son dernier rendez-vous il y a ${joursAnnul} jours et n'en a pas repris depuis.`;
-          await creeAlerte(client.id, "annulation_sans_reprise", msg, genRelance("annulation_sans_reprise", client.nom), "haute");
+          await creeAlerte(client.id, userId, "annulation_sans_reprise", msg, genRelance("annulation_sans_reprise", client.nom), "haute");
           alertesCreees++;
         }
       }
 
-      // RULE 4 — NON-RENOUVELLEMENT
       if (client.abonnement_actif && dateRenouvellement) {
         const joursRenouv = daysBetween(dateRenouvellement, today);
         if (joursRenouv >= 0 && !(await alerteExiste(client.id, "non_renouvellement"))) {
           const msg = `L'abonnement de ${client.nom} devait être renouvelé le ${dateRenouvellement.toLocaleDateString("fr-FR")} et ne l'a pas été.`;
-          await creeAlerte(client.id, "non_renouvellement", msg, genRelance("non_renouvellement", client.nom), "haute");
+          await creeAlerte(client.id, userId, "non_renouvellement", msg, genRelance("non_renouvellement", client.nom), "haute");
           alertesCreees++;
         }
       }
 
-      // RULE 5 — ABSENCE JOUR HABITUEL (commerce_fidele uniquement)
       if (isCommerceFidele) {
         const visites = await db
           .select()
@@ -137,16 +133,14 @@ router.post("/detection/run", async (_req, res) => {
             const jourNom = jourHabituel[0];
             const todayNom = JOURS[today.getDay()];
 
-            // Update jour_habituel in DB
             if (client.jour_habituel !== jourNom) {
               await db.update(clientsTable).set({ jour_habituel: jourNom }).where(eq(clientsTable.id, client.id));
             }
 
-            // Check if today IS their usual day and they haven't come
             if (todayNom === jourNom && (joursDepuis === null || joursDepuis > 0)) {
               if (!(await alerteExiste(client.id, "absence_jour_habituel"))) {
                 const msg = `${client.nom} vient habituellement le ${jourNom}, mais n'est pas venu(e) aujourd'hui.`;
-                await creeAlerte(client.id, "absence_jour_habituel", msg, genRelance("absence_jour_habituel", client.nom, { jour: jourNom }), "moyenne");
+                await creeAlerte(client.id, userId, "absence_jour_habituel", msg, genRelance("absence_jour_habituel", client.nom, { jour: jourNom }), "moyenne");
                 alertesCreees++;
               }
             }

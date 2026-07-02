@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { alertesTable, clientsTable, feedbackTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { requireAuth, AuthRequest } from "../middlewares/requireAuth";
 
 const router = Router();
-const DEMO_USER_ID = 1;
 
 async function formatAlerte(alerte: typeof alertesTable.$inferSelect) {
   const [client] = await db.select({ nom: clientsTable.nom }).from(clientsTable).where(eq(clientsTable.id, alerte.client_id)).limit(1);
@@ -16,14 +16,15 @@ async function formatAlerte(alerte: typeof alertesTable.$inferSelect) {
   };
 }
 
-router.get("/alertes", async (req, res) => {
+router.get("/alertes", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const { statut } = req.query;
     let rows = await db
       .select({ alerte: alertesTable, client_nom: clientsTable.nom })
       .from(alertesTable)
       .leftJoin(clientsTable, eq(alertesTable.client_id, clientsTable.id))
-      .where(eq(alertesTable.user_id, DEMO_USER_ID))
+      .where(eq(alertesTable.user_id, userId))
       .orderBy(alertesTable.created_at);
 
     if (statut && statut !== "tous") {
@@ -43,15 +44,16 @@ router.get("/alertes", async (req, res) => {
   }
 });
 
-router.patch("/alertes/:id/traiter", async (req, res) => {
+router.patch("/alertes/:id/traiter", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
     const [alerte] = await db
       .update(alertesTable)
       .set({ statut: "traite", traite_at: new Date(), suivi_demande: false })
-      .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, DEMO_USER_ID)))
+      .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, userId)))
       .returning();
 
     if (!alerte) return res.status(404).json({ error: "Alerte non trouvée" });
@@ -61,8 +63,9 @@ router.patch("/alertes/:id/traiter", async (req, res) => {
   }
 });
 
-router.post("/alertes/:id/suivi", async (req, res) => {
+router.post("/alertes/:id/suivi", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
@@ -72,13 +75,13 @@ router.post("/alertes/:id/suivi", async (req, res) => {
     const [alerte] = await db
       .update(alertesTable)
       .set({ suivi_demande: true, suivi_repondu: repondu })
-      .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, DEMO_USER_ID)))
+      .where(and(eq(alertesTable.id, id), eq(alertesTable.user_id, userId)))
       .returning();
 
     if (!alerte) return res.status(404).json({ error: "Alerte non trouvée" });
 
     await db.insert(feedbackTable).values({
-      user_id: DEMO_USER_ID,
+      user_id: userId,
       alerte_id: id,
       type_feedback: typeFeedback,
     });

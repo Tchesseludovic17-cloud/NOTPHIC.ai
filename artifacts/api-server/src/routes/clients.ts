@@ -2,20 +2,16 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { clientsTable, alertesTable, historiqueVisitesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import {
-  CreateClientBody,
-  UpdateClientBody,
-} from "@workspace/api-zod";
+import { CreateClientBody, UpdateClientBody } from "@workspace/api-zod";
+import { requireAuth, AuthRequest } from "../middlewares/requireAuth";
 
 const router = Router();
 
-const DEMO_USER_ID = 1;
-
-async function getClientWithAlerts(clientId: number) {
+async function getClientWithAlerts(clientId: number, userId: number) {
   const [client] = await db
     .select()
     .from(clientsTable)
-    .where(and(eq(clientsTable.id, clientId), eq(clientsTable.user_id, DEMO_USER_ID)))
+    .where(and(eq(clientsTable.id, clientId), eq(clientsTable.user_id, userId)))
     .limit(1);
 
   if (!client) return null;
@@ -37,12 +33,13 @@ async function getClientWithAlerts(clientId: number) {
   };
 }
 
-router.get("/clients", async (_req, res) => {
+router.get("/clients", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const clients = await db
       .select()
       .from(clientsTable)
-      .where(eq(clientsTable.user_id, DEMO_USER_ID))
+      .where(eq(clientsTable.user_id, userId))
       .orderBy(clientsTable.created_at);
 
     const clientIds = clients.map((c) => c.id);
@@ -55,12 +52,7 @@ router.get("/clients", async (_req, res) => {
           count: sql<number>`count(*)::int`,
         })
         .from(alertesTable)
-        .where(
-          and(
-            eq(alertesTable.statut, "non_lu"),
-            eq(alertesTable.user_id, DEMO_USER_ID)
-          )
-        )
+        .where(and(eq(alertesTable.statut, "non_lu"), eq(alertesTable.user_id, userId)))
         .groupBy(alertesTable.client_id);
 
       alertCounts = Object.fromEntries(counts.map((c) => [c.client_id, c.count]));
@@ -78,22 +70,21 @@ router.get("/clients", async (_req, res) => {
     }));
 
     return res.json(result);
-  } catch (err) {
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.post("/clients", async (req, res) => {
+router.post("/clients", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const parsed = CreateClientBody.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Données invalides" });
-    }
+    if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
 
     const [client] = await db
       .insert(clientsTable)
       .values({
-        user_id: DEMO_USER_ID,
+        user_id: userId,
         nom: parsed.data.nom,
         telephone: parsed.data.telephone ?? null,
         email: parsed.data.email ?? null,
@@ -115,39 +106,35 @@ router.post("/clients", async (req, res) => {
       });
     }
 
-    return res.status(201).json({
-      ...client,
-      nb_alertes_actives: 0,
-      created_at: client.created_at.toISOString(),
-    });
-  } catch (err) {
+    return res.status(201).json({ ...client, nb_alertes_actives: 0, created_at: client.created_at.toISOString() });
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.get("/clients/:id", async (req, res) => {
+router.get("/clients/:id", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-    const client = await getClientWithAlerts(id);
+    const client = await getClientWithAlerts(id, userId);
     if (!client) return res.status(404).json({ error: "Client non trouvé" });
 
     return res.json(client);
-  } catch (err) {
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.patch("/clients/:id", async (req, res) => {
+router.patch("/clients/:id", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
     const parsed = UpdateClientBody.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Données invalides" });
-    }
+    if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
 
     const updateData: Record<string, unknown> = {};
     const d = parsed.data;
@@ -165,37 +152,33 @@ router.patch("/clients/:id", async (req, res) => {
     if (d.abonnement_actif !== undefined) updateData.abonnement_actif = d.abonnement_actif;
     if (d.abonnement_date_renouvellement !== undefined) updateData.abonnement_date_renouvellement = d.abonnement_date_renouvellement;
 
-    await db
-      .update(clientsTable)
-      .set(updateData)
-      .where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, DEMO_USER_ID)));
+    await db.update(clientsTable).set(updateData).where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, userId)));
 
-    const client = await getClientWithAlerts(id);
+    const client = await getClientWithAlerts(id, userId);
     if (!client) return res.status(404).json({ error: "Client non trouvé" });
 
     return res.json(client);
-  } catch (err) {
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.delete("/clients/:id", async (req, res) => {
+router.delete("/clients/:id", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-    await db
-      .delete(clientsTable)
-      .where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, DEMO_USER_ID)));
-
+    await db.delete(clientsTable).where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, userId)));
     return res.status(204).send();
-  } catch (err) {
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.post("/clients/:id/visit", async (req, res) => {
+router.post("/clients/:id/visit", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
@@ -203,16 +186,10 @@ router.post("/clients/:id/visit", async (req, res) => {
 
     await db
       .update(clientsTable)
-      .set({
-        derniere_visite: today,
-        date_dernier_contact: today,
-      })
-      .where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, DEMO_USER_ID)));
+      .set({ derniere_visite: today, date_dernier_contact: today })
+      .where(and(eq(clientsTable.id, id), eq(clientsTable.user_id, userId)));
 
-    await db.insert(historiqueVisitesTable).values({
-      client_id: id,
-      date_visite: today,
-    });
+    await db.insert(historiqueVisitesTable).values({ client_id: id, date_visite: today });
 
     const allVisits = await db
       .select()
@@ -227,17 +204,14 @@ router.post("/clients/:id/visit", async (req, res) => {
         totalDiff += (dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24);
       }
       const avgFreq = Math.round(totalDiff / (dates.length - 1));
-      await db
-        .update(clientsTable)
-        .set({ frequence_moyenne_jours: avgFreq })
-        .where(eq(clientsTable.id, id));
+      await db.update(clientsTable).set({ frequence_moyenne_jours: avgFreq }).where(eq(clientsTable.id, id));
     }
 
-    const client = await getClientWithAlerts(id);
+    const client = await getClientWithAlerts(id, userId);
     if (!client) return res.status(404).json({ error: "Client non trouvé" });
 
     return res.json(client);
-  } catch (err) {
+  } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });

@@ -3,9 +3,9 @@ import { db } from "@workspace/db";
 import { usersTable, affiliationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { SetupUserBody, UpdateMeBody } from "@workspace/api-zod";
+import { requireClerkAuth, requireAuth, AuthRequest } from "../middlewares/requireAuth";
 
 const router = Router();
-const DEMO_USER_ID = 1;
 
 function toSlug(nom: string): string {
   return nom
@@ -23,23 +23,33 @@ function genCodeParrainage(id: number): string {
   return "NORP" + String(id).padStart(4, "0");
 }
 
-router.get("/users/me", async (_req, res) => {
+router.get("/users/me", requireClerkAuth, async (req, res) => {
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, DEMO_USER_ID)).limit(1);
-    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+    const clerkUserId = (req as AuthRequest).clerkUserId;
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerk_id, clerkUserId))
+      .limit(1);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé", code: "NOT_SETUP" });
     return res.json({ ...user, created_at: user.created_at.toISOString() });
   } catch {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-router.post("/users/setup", async (req, res) => {
+router.post("/users/setup", requireClerkAuth, async (req, res) => {
   try {
     const parsed = SetupUserBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
 
+    const clerkUserId = (req as AuthRequest).clerkUserId;
     const slug = toSlug(parsed.data.nom_activite);
-    const existing = await db.select().from(usersTable).where(eq(usersTable.id, DEMO_USER_ID)).limit(1);
+    const existing = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerk_id, clerkUserId))
+      .limit(1);
 
     if (existing.length > 0) {
       const [updated] = await db
@@ -53,14 +63,15 @@ router.post("/users/setup", async (req, res) => {
           reduction_offerte: parsed.data.reduction_offerte ?? null,
           email: parsed.data.email ?? null,
         })
-        .where(eq(usersTable.id, DEMO_USER_ID))
+        .where(eq(usersTable.clerk_id, clerkUserId))
         .returning();
-      return res.status(201).json({ ...updated, created_at: updated.created_at.toISOString() });
+      return res.status(200).json({ ...updated, created_at: updated.created_at.toISOString() });
     }
 
     const [user] = await db
       .insert(usersTable)
       .values({
+        clerk_id: clerkUserId,
         nom_activite: parsed.data.nom_activite,
         slug,
         categorie_activite: parsed.data.categorie_activite,
@@ -79,7 +90,6 @@ router.post("/users/setup", async (req, res) => {
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    // Handle referral if code_parrainage_parrain provided
     const parrainCode = (parsed.data as Record<string, unknown>).code_parrainage_parrain as string | undefined;
     if (parrainCode) {
       const [parrain] = await db
@@ -103,8 +113,9 @@ router.post("/users/setup", async (req, res) => {
   }
 });
 
-router.patch("/users/me", async (req, res) => {
+router.patch("/users/me", requireAuth, async (req, res) => {
   try {
+    const userId = (req as AuthRequest).userId;
     const parsed = UpdateMeBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
 
@@ -119,7 +130,7 @@ router.patch("/users/me", async (req, res) => {
     if (parsed.data.reduction_offerte !== undefined) updateData.reduction_offerte = parsed.data.reduction_offerte;
     if (parsed.data.email !== undefined) updateData.email = parsed.data.email;
 
-    const [user] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, DEMO_USER_ID)).returning();
+    const [user] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, userId)).returning();
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
     return res.json({ ...user, created_at: user.created_at.toISOString() });
   } catch {
