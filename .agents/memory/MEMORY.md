@@ -1,0 +1,3 @@
+- [Clerk Auth setup](clerk-auth.md) — Clerk provisionné (managed), connexion cookie-based, proxy middleware wired, dev keys attendus en dev.
+- [Multi-user auth migration](multiuser-auth.md) — DEMO_USER_ID remplacé par clerk_id en DB + requireAuth/requireClerkAuth middlewares, last_active tracké automatiquement.
+- [Admin dashboard](admin-dashboard.md) — est_admin booléen en DB, route /api/admin/overview, page /admin protégée, user id=1 marqué admin.

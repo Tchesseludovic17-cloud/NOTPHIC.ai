@@ -9,6 +9,7 @@ import siteRouter from "./site";
 import feedbackRouter from "./feedback";
 import affiliationsRouter from "./affiliations";
 import companyTwinRouter from "./company-twin";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(siteRouter);
 router.use(feedbackRouter);
 router.use(affiliationsRouter);
 router.use(companyTwinRouter);
+router.use(adminRouter);
 
 export default router;

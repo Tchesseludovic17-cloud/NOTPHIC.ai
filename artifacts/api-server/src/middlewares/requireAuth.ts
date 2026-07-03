@@ -26,6 +26,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     return res.status(404).json({ error: "Utilisateur non configuré", code: "NOT_SETUP" });
   }
 
+  // Update last_active asynchronously (fire and forget)
+  db.update(usersTable)
+    .set({ last_active: new Date() })
+    .where(eq(usersTable.id, dbUser.id))
+    .catch(() => {});
+
   (req as AuthRequest).clerkUserId = clerkUserId;
   (req as AuthRequest).userId = dbUser.id;
   return next();

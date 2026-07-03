@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -14,6 +14,8 @@ export const usersTable = pgTable("users", {
   reduction_offerte: text("reduction_offerte"),
   plan: text("plan").notNull().default("gratuit"),
   code_parrainage: text("code_parrainage"),
+  est_admin: boolean("est_admin").notNull().default(false),
+  last_active: timestamp("last_active"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 

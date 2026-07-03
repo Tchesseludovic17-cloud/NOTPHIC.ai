@@ -1,11 +1,14 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Bell, Settings, LogOut, Gift, BookOpen, Globe } from "lucide-react";
+import { LayoutDashboard, Users, Bell, Settings, LogOut, Gift, BookOpen, Globe, ShieldCheck } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
+import { useClerk } from "@clerk/react";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: user } = useGetMe();
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const navigation = [
     { name: "Vue d'ensemble", href: "/dashboard", icon: LayoutDashboard },
@@ -29,13 +32,11 @@ export function Layout({ children }: { children: ReactNode }) {
               const isActive = location === item.href || location.startsWith(`${item.href}/`);
               return (
                 <Link key={item.name} href={item.href}>
-                  <div
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    }`}
-                  >
+                  <div className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  }`}>
                     <item.icon className="w-4 h-4" />
                     {item.name}
                   </div>
@@ -53,6 +54,16 @@ export function Layout({ children }: { children: ReactNode }) {
               </div>
             </a>
           )}
+          {(user as { est_admin?: boolean })?.est_admin && (
+            <Link href="/admin">
+              <div className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                location === "/admin" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              }`}>
+                <ShieldCheck className="w-4 h-4" />
+                Admin
+              </div>
+            </Link>
+          )}
           <Link href="/parametres">
             <div className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
               location === "/parametres" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -61,12 +72,15 @@ export function Layout({ children }: { children: ReactNode }) {
               Paramètres
             </div>
           </Link>
-          <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer transition-colors mt-2">
+          <button
+            onClick={() => signOut({ redirectUrl: basePath || "/" })}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground cursor-pointer transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Déconnexion
-          </div>
+          </button>
           {user && (
-            <div className="mt-4 px-3 py-2">
+            <div className="mt-3 px-3 py-2 border-t border-border/40 pt-3">
               <p className="text-xs font-medium text-sidebar-foreground">{user.nom_activite}</p>
               <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
             </div>
