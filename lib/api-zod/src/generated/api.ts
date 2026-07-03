@@ -30,7 +30,8 @@ export const GetMeResponse = zod.object({
   "reduction_offerte": zod.string().nullish(),
   "plan": zod.enum(['gratuit', 'essentiel', 'pro']),
   "code_parrainage": zod.string().nullish(),
-  "created_at": zod.string()
+  "created_at": zod.string(),
+  "est_admin": zod.boolean().optional()
 })
 
 

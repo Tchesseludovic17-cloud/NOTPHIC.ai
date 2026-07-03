@@ -54,7 +54,7 @@ export function Layout({ children }: { children: ReactNode }) {
               </div>
             </a>
           )}
-          {(user as { est_admin?: boolean })?.est_admin && (
+          {user?.est_admin && (
             <Link href="/admin">
               <div className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 location === "/admin" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"

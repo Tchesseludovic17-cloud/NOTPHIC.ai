@@ -48,6 +48,7 @@ export interface User {
   /** @nullable */
   code_parrainage?: string | null;
   created_at: string;
+  est_admin?: boolean;
 }
 
 export type UserInputCategorieActivite = typeof UserInputCategorieActivite[keyof typeof UserInputCategorieActivite];
