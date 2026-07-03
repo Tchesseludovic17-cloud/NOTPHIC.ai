@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { clerkClient } from "@clerk/express";
 import { db } from "@workspace/db";
 import { usersTable, affiliationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -68,9 +69,18 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
       return res.status(200).json({ ...updated, created_at: updated.created_at.toISOString() });
     }
 
+    // Fetch email from Clerk so admin detection works even if form doesn't send it
+    let clerkEmail: string | null = parsed.data.email ?? null;
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+      const primary = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId);
+      if (primary?.emailAddress) clerkEmail = primary.emailAddress;
+    } catch {
+      // fallback to form value if Clerk call fails
+    }
+
     const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").toLowerCase().split(",").map((e) => e.trim()).filter(Boolean);
-    const emailLower = (parsed.data.email ?? "").toLowerCase();
-    const isAdmin = ADMIN_EMAILS.length > 0 && emailLower && ADMIN_EMAILS.includes(emailLower);
+    const isAdmin = Boolean(clerkEmail && ADMIN_EMAILS.includes(clerkEmail.toLowerCase()));
 
     const [user] = await db
       .insert(usersTable)
@@ -82,7 +92,7 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
         description_activite: parsed.data.description_activite ?? null,
         client_ideal: parsed.data.client_ideal ?? null,
         reduction_offerte: parsed.data.reduction_offerte ?? null,
-        email: parsed.data.email ?? null,
+        email: clerkEmail,
         plan: "gratuit",
         est_admin: isAdmin,
       })
@@ -113,8 +123,9 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
     }
 
     return res.status(201).json({ ...withCode, created_at: withCode.created_at.toISOString() });
-  } catch {
-    return res.status(500).json({ error: "Erreur serveur" });
+  } catch (err) {
+    console.error("[/users/setup] Erreur:", err);
+    return res.status(500).json({ error: "Erreur serveur", detail: String(err) });
   }
 });
 
