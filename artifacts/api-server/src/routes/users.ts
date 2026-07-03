@@ -68,6 +68,10 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
       return res.status(200).json({ ...updated, created_at: updated.created_at.toISOString() });
     }
 
+    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").toLowerCase().split(",").map((e) => e.trim()).filter(Boolean);
+    const emailLower = (parsed.data.email ?? "").toLowerCase();
+    const isAdmin = ADMIN_EMAILS.length > 0 && emailLower && ADMIN_EMAILS.includes(emailLower);
+
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -80,6 +84,7 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
         reduction_offerte: parsed.data.reduction_offerte ?? null,
         email: parsed.data.email ?? null,
         plan: "gratuit",
+        est_admin: isAdmin,
       })
       .returning();
 
