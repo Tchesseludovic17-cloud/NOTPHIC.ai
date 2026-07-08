@@ -6,6 +6,7 @@ import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wo
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { TranslationProvider } from "@/hooks/use-translation";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
@@ -180,9 +181,11 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <ClerkQueryClientCacheInvalidator />
-          <Router />
-          <Toaster />
+          <TranslationProvider>
+            <ClerkQueryClientCacheInvalidator />
+            <Router />
+            <Toaster />
+          </TranslationProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
