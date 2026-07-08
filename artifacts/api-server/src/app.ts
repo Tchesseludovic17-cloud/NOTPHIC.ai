@@ -8,6 +8,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -35,7 +36,24 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+// CORS configuration: strict by default, only allow specific origins
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",");
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
+  }),
+);
+
+// Apply rate limiting to API routes
+app.use("/api", rateLimitMiddleware());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,5 +67,14 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Global error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, "Unhandled error");
+  if (err.message === "CORS not allowed") {
+    return res.status(403).json({ error: "CORS not allowed" });
+  }
+  res.status(500).json({ error: "Internal server error" });
+});
 
 export default app;
