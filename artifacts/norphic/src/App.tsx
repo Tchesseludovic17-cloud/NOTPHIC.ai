@@ -7,6 +7,10 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TranslationProvider } from "@/hooks/use-translation";
+import { LandingHeader } from "@/components/landing-header";
+import { LandingFooter } from "@/components/landing-footer";
+import { AdminReturn } from "@/components/admin-return";
+import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
@@ -129,7 +133,7 @@ function HomeRedirect() {
   return (
     <>
       <Show when="signed-in"><OnboardingOrDashboard /></Show>
-      <Show when="signed-out"><Redirect to="/sign-in" /></Show>
+      <Show when="signed-out"><Landing /></Show>
     </>
   );
 }
@@ -183,7 +187,14 @@ function ClerkProviderWithRoutes() {
         <TooltipProvider>
           <TranslationProvider>
             <ClerkQueryClientCacheInvalidator />
-            <Router />
+            <div className="flex flex-col min-h-screen">
+              <LandingHeader />
+              <div className="flex-1">
+                <Router />
+              </div>
+              <LandingFooter />
+              <AdminReturn />
+            </div>
             <Toaster />
           </TranslationProvider>
         </TooltipProvider>
