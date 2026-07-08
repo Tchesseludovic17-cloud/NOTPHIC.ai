@@ -12,6 +12,13 @@ export const translations = {
     copy: "Copy",
     back: "Back",
 
+    // Auth
+    auth: {
+      signIn: "Sign In",
+      signUp: "Sign Up",
+      signOut: "Sign Out",
+    },
+
     // Dashboard
     dashboard: {
       title: "Dashboard",
@@ -90,6 +97,25 @@ export const translations = {
       admin: "Admin",
       logout: "Logout",
     },
+
+    // Landing Page
+    landing: {
+      hero: {
+        title: "Welcome to Norphic",
+        subtitle: "The intelligent platform to manage your clients, detect risks and maximize your growth opportunities.",
+        cta: "Get Started Free",
+      },
+      features: {
+        title: "Key Features",
+      },
+      footer: {
+        tagline: "Smart client management for independent professionals.",
+        product: "Product",
+        company: "Company",
+        legal: "Legal",
+        rights: "All rights reserved.",
+      },
+    },
   },
   fr: {
     // Common
@@ -103,6 +129,13 @@ export const translations = {
     add: "Ajouter",
     copy: "Copier",
     back: "Retour",
+
+    // Auth
+    auth: {
+      signIn: "Se connecter",
+      signUp: "S'inscrire",
+      signOut: "Déconnexion",
+    },
 
     // Dashboard
     dashboard: {
@@ -181,6 +214,25 @@ export const translations = {
       settings: "Paramètres",
       admin: "Admin",
       logout: "Déconnexion",
+    },
+
+    // Landing Page
+    landing: {
+      hero: {
+        title: "Bienvenue sur Norphic",
+        subtitle: "La plateforme intelligente pour gérer vos clients, détecter les risques et maximiser vos opportunités de croissance.",
+        cta: "Commencer gratuitement",
+      },
+      features: {
+        title: "Fonctionnalités principales",
+      },
+      footer: {
+        tagline: "Gestion intelligente des clients pour les professionnels indépendants.",
+        product: "Produit",
+        company: "Entreprise",
+        legal: "Légal",
+        rights: "Tous droits réservés.",
+      },
     },
   },
 } as const;
