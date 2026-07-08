@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
-export function LandingPage() {
+export default function Landing() {
   const { isSignedIn, isLoaded } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -17,7 +18,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="flex-1 flex items-center justify-center py-20 px-4 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto max-w-4xl text-center">
@@ -27,20 +28,24 @@ export function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             La plateforme intelligente pour gérer vos clients, détecter les risques et maximiser vos opportunités de croissance.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/sign-up" className="inline-flex items-center justify-center px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition">
-              Commencer gratuitement
+            <a href="/sign-up">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full">
+                Commencer gratuitement
+              </Button>
             </a>
-            <a href="/sign-in" className="inline-flex items-center justify-center px-8 py-3 border border-primary text-primary rounded-lg font-medium hover:bg-primary/5 transition">
-              Se connecter
+            <a href="/sign-in">
+              <Button variant="outline" className="w-full">
+                Se connecter
+              </Button>
             </a>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4">
+      <section id="features" className="py-20 px-4 bg-background">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl font-serif font-bold text-center text-foreground mb-16">
             Fonctionnalités principales
@@ -74,7 +79,7 @@ export function LandingPage() {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-2xl">💾</span>
               </div>
-              <h3 className="text-xl font-serif font-bold text-foreground mb-3">M��moire de votre activité</h3>
+              <h3 className="text-xl font-serif font-bold text-foreground mb-3">Mémoire de votre activité</h3>
               <p className="text-muted-foreground">
                 Une trace complète de votre parcours professionnel. Statistiques, tendances et insights pour optimiser votre business.
               </p>
@@ -146,7 +151,7 @@ export function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-background">
         <div className="container mx-auto max-w-2xl bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl border border-primary/20 p-12 text-center">
           <h2 className="text-3xl font-serif font-bold text-foreground mb-4">
             Prêt à transformer votre gestion client ?
@@ -154,8 +159,10 @@ export function LandingPage() {
           <p className="text-muted-foreground mb-8 text-lg">
             Rejoignez des centaines de professionnels indépendants qui font confiance à Norphic.
           </p>
-          <a href="/sign-up" className="inline-flex items-center justify-center px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition">
-            Commencer gratuitement
+          <a href="/sign-up">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              Commencer gratuitement
+            </Button>
           </a>
         </div>
       </section>
