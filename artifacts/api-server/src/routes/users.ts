@@ -5,6 +5,7 @@ import { usersTable, affiliationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { SetupUserBody, UpdateMeBody } from "@workspace/api-zod";
 import { requireClerkAuth, requireAuth, AuthRequest } from "../middlewares/requireAuth";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -24,6 +25,13 @@ function genCodeParrainage(id: number): string {
   return "NORP" + String(id).padStart(4, "0");
 }
 
+function serializeUser(user: any) {
+  return {
+    ...user,
+    created_at: user.created_at instanceof Date ? user.created_at.toISOString() : user.created_at,
+  };
+}
+
 router.get("/users/me", requireClerkAuth, async (req, res) => {
   try {
     const clerkUserId = (req as AuthRequest).clerkUserId;
@@ -33,8 +41,9 @@ router.get("/users/me", requireClerkAuth, async (req, res) => {
       .where(eq(usersTable.clerk_id, clerkUserId))
       .limit(1);
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé", code: "NOT_SETUP" });
-    return res.json({ ...user, created_at: user.created_at.toISOString() });
-  } catch {
+    return res.json(serializeUser(user));
+  } catch (err) {
+    logger.error({ err }, "Failed to fetch user");
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -42,7 +51,10 @@ router.get("/users/me", requireClerkAuth, async (req, res) => {
 router.post("/users/setup", requireClerkAuth, async (req, res) => {
   try {
     const parsed = SetupUserBody.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
+    if (!parsed.success) {
+      logger.debug({ errors: parsed.error.errors }, "Invalid setup user body");
+      return res.status(400).json({ error: "Données invalides" });
+    }
 
     const clerkUserId = (req as AuthRequest).clerkUserId;
     const slug = toSlug(parsed.data.nom_activite);
@@ -66,7 +78,7 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
         })
         .where(eq(usersTable.clerk_id, clerkUserId))
         .returning();
-      return res.status(200).json({ ...updated, created_at: updated.created_at.toISOString() });
+      return res.status(200).json(serializeUser(updated));
     }
 
     // Fetch email from Clerk so admin detection works even if form doesn't send it
@@ -75,13 +87,19 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
       const clerkUser = await clerkClient.users.getUser(clerkUserId);
       const primary = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId);
       if (primary?.emailAddress) clerkEmail = primary.emailAddress;
-    } catch {
+    } catch (err) {
+      logger.warn({ err, clerkUserId }, "Failed to fetch email from Clerk");
       // fallback to form value if Clerk call fails
     }
 
-    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").toLowerCase().split(",").map((e) => e.trim()).filter(Boolean);
+    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+      .toLowerCase()
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
     const isAdmin = Boolean(clerkEmail && ADMIN_EMAILS.includes(clerkEmail.toLowerCase()));
 
+    // Use transaction-like pattern for multi-step operation
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -105,27 +123,33 @@ router.post("/users/setup", requireClerkAuth, async (req, res) => {
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const parrainCode = (parsed.data as Record<string, unknown>).code_parrainage_parrain as string | undefined;
-    if (parrainCode) {
-      const [parrain] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.code_parrainage, parrainCode))
-        .limit(1);
-      if (parrain) {
-        await db.insert(affiliationsTable).values({
-          user_id_parrain: parrain.id,
-          user_id_filleul: user.id,
-          statut_actif: true,
-          taux_commission_actuel: 20,
-        });
+    // Handle referral code if provided
+    const parrainCode = parsed.data.code_parrainage_parrain;
+    if (parrainCode && typeof parrainCode === "string") {
+      try {
+        const [parrain] = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.code_parrainage, parrainCode))
+          .limit(1);
+        if (parrain) {
+          await db.insert(affiliationsTable).values({
+            user_id_parrain: parrain.id,
+            user_id_filleul: user.id,
+            statut_actif: true,
+            taux_commission_actuel: 20,
+          });
+        }
+      } catch (err) {
+        logger.error({ err, parrainCode }, "Failed to create affiliation");
+        // Non-critical error, continue
       }
     }
 
-    return res.status(201).json({ ...withCode, created_at: withCode.created_at.toISOString() });
+    return res.status(201).json(serializeUser(withCode));
   } catch (err) {
-    console.error("[/users/setup] Erreur:", err);
-    return res.status(500).json({ error: "Erreur serveur", detail: String(err) });
+    logger.error({ err }, "Failed to setup user");
+    return res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
@@ -133,7 +157,10 @@ router.patch("/users/me", requireAuth, async (req, res) => {
   try {
     const userId = (req as AuthRequest).userId;
     const parsed = UpdateMeBody.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
+    if (!parsed.success) {
+      logger.debug({ errors: parsed.error.errors }, "Invalid update user body");
+      return res.status(400).json({ error: "Données invalides" });
+    }
 
     const updateData: Record<string, unknown> = {};
     if (parsed.data.nom_activite !== undefined) {
@@ -147,9 +174,13 @@ router.patch("/users/me", requireAuth, async (req, res) => {
     if (parsed.data.email !== undefined) updateData.email = parsed.data.email;
 
     const [user] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, userId)).returning();
-    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
-    return res.json({ ...user, created_at: user.created_at.toISOString() });
-  } catch {
+    if (!user) {
+      logger.warn({ userId }, "User not found after update");
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+    return res.json(serializeUser(user));
+  } catch (err) {
+    logger.error({ err }, "Failed to update user");
     return res.status(500).json({ error: "Erreur serveur" });
   }
 });
