@@ -147,20 +147,77 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function LandingLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <LandingHeader />
+      <div className="flex-1">
+        {children}
+      </div>
+      <LandingFooter />
+    </div>
+  );
+}
+
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      {children}
+      <AdminReturn />
+    </div>
+  );
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomeRedirect} />
+      <Route path="/">
+        <LandingLayout>
+          <HomeRedirect />
+        </LandingLayout>
+      </Route>
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
-      <Route path="/onboarding"><ProtectedRoute component={Onboarding} /></Route>
-      <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
-      <Route path="/clients"><ProtectedRoute component={Clients} /></Route>
-      <Route path="/alertes"><ProtectedRoute component={Alertes} /></Route>
-      <Route path="/parametres"><ProtectedRoute component={Parametres} /></Route>
-      <Route path="/affiliations"><ProtectedRoute component={Affiliations} /></Route>
-      <Route path="/company-twin"><ProtectedRoute component={CompanyTwin} /></Route>
-      <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
+      <Route path="/onboarding">
+        <AppLayout>
+          <ProtectedRoute component={Onboarding} />
+        </AppLayout>
+      </Route>
+      <Route path="/dashboard">
+        <AppLayout>
+          <ProtectedRoute component={Dashboard} />
+        </AppLayout>
+      </Route>
+      <Route path="/clients">
+        <AppLayout>
+          <ProtectedRoute component={Clients} />
+        </AppLayout>
+      </Route>
+      <Route path="/alertes">
+        <AppLayout>
+          <ProtectedRoute component={Alertes} />
+        </AppLayout>
+      </Route>
+      <Route path="/parametres">
+        <AppLayout>
+          <ProtectedRoute component={Parametres} />
+        </AppLayout>
+      </Route>
+      <Route path="/affiliations">
+        <AppLayout>
+          <ProtectedRoute component={Affiliations} />
+        </AppLayout>
+      </Route>
+      <Route path="/company-twin">
+        <AppLayout>
+          <ProtectedRoute component={CompanyTwin} />
+        </AppLayout>
+      </Route>
+      <Route path="/admin">
+        <AppLayout>
+          <ProtectedRoute component={Admin} />
+        </AppLayout>
+      </Route>
       <Route path="/site/:slug" component={SitePublic} />
       <Route component={NotFound} />
     </Switch>
@@ -187,14 +244,7 @@ function ClerkProviderWithRoutes() {
         <TooltipProvider>
           <TranslationProvider>
             <ClerkQueryClientCacheInvalidator />
-            <div className="flex flex-col min-h-screen">
-              <LandingHeader />
-              <div className="flex-1">
-                <Router />
-              </div>
-              <LandingFooter />
-              <AdminReturn />
-            </div>
+            <Router />
             <Toaster />
           </TranslationProvider>
         </TooltipProvider>
